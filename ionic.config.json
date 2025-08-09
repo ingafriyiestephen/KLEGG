@@ -1,0 +1,7 @@
+{
+  "name": "Klegg",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
