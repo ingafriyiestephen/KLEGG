@@ -1,1 +1,0 @@
-System.register(["./index-legacy-LZepmReL.js"],function(e,t){"use strict";var s,n;return{setters:[e=>{s=e.ae,n=e.af}],execute:function(){e("T",s("Toast",{web:()=>n(()=>t.import("./web-legacy-B0PIgEck.js"),void 0).then(e=>new e.ToastWeb)}))}}});

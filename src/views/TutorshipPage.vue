@@ -171,7 +171,7 @@ const fetchClasses = async () => {
     loading.value = true;
 
     const response = await axios.get<ClassItem[]>(
-      "https://school.klgilc.com/api/tutorships",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/tutorships",
       {
         headers: getAuthHeaders(),
         timeout: 20000, // 20-second timeout
@@ -325,25 +325,26 @@ onMounted(fetchClasses);
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background: white;
+  background: var(--ion-card-background);
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
   z-index: 10;
+  border-bottom: 1px solid var(--ion-border-color);
 }
 
 .header-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #2f3542;
+  color: var(--ion-text-color);
   margin: 0;
 }
 
 .back-btn {
-  --color: #2f3542;
+  --color: var(--ion-text-color);
   --icon-font-size: 1.4rem;
 }
 
 .refresh-btn {
-  --color: #2f3542;
+  --color: var(--ion-text-color);
 }
 
 /* Loading State */
@@ -354,12 +355,14 @@ onMounted(fetchClasses);
   justify-content: center;
   height: 60vh;
   text-align: center;
+  background: var(--ion-background-color);
 }
 
 .loading-container ion-spinner {
   width: 48px;
   height: 48px;
   margin-bottom: 16px;
+  color: var(--ion-color-primary);
 }
 
 .loading-container p {
@@ -386,6 +389,7 @@ onMounted(fetchClasses);
   height: 70vh;
   padding: 20px;
   text-align: center;
+  background: var(--ion-background-color);
 }
 
 .desk-illustration {
@@ -400,7 +404,7 @@ onMounted(fetchClasses);
   bottom: 0;
   width: 180px;
   height: 10px;
-  background: #a55c40;
+  background: #a55c40; /* Kept as fixed color for consistency */
   border-radius: 4px;
 }
 
@@ -411,7 +415,7 @@ onMounted(fetchClasses);
   transform: translateX(-50%);
   width: 60px;
   height: 80px;
-  background: #f5f6fa;
+  background: var(--ion-color-step-200);
   border-radius: 30px 30px 0 0;
 }
 
@@ -422,7 +426,7 @@ onMounted(fetchClasses);
   left: 0;
   width: 100%;
   height: 20px;
-  background: #e84118;
+  background: var(--ion-color-primary);
   border-radius: 0 0 10px 10px;
 }
 
@@ -437,7 +441,7 @@ onMounted(fetchClasses);
 .book-stack .book {
   position: absolute;
   height: 8px;
-  background: white;
+  background: var(--ion-color-step-100);
   border-radius: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -446,38 +450,38 @@ onMounted(fetchClasses);
   width: 100px;
   bottom: 0;
   left: 0;
-  background: #ff9ff3;
+  background: var(--english-color);
 }
 
 .book-stack .book:nth-child(2) {
   width: 110px;
   bottom: 10px;
   left: 5px;
-  background: #feca57;
+  background: var(--history-color);
 }
 
 .book-stack .book:nth-child(3) {
   width: 90px;
   bottom: 20px;
   left: 15px;
-  background: #4ecdc4;
+  background: var(--science-color);
 }
 
 .creative-empty-state h3 {
   font-size: 1.3rem;
-  color: #2f3542;
+  color: var(--ion-text-color);
   margin-bottom: 8px;
 }
 
 .creative-empty-state p {
-  color: #57606f;
+  color: var(--ion-color-medium);
   margin-bottom: 25px;
 }
 
 .cta-button {
-  --background: #3f51b5;
-  --background-activated: #303f9f;
-  --color: white;
+  --background: var(--ion-color-primary);
+  --background-activated: var(--ion-color-primary-shade);
+  --color: var(--ion-color-primary-contrast);
   font-weight: 500;
   padding: 0 25px;
 }
@@ -488,10 +492,11 @@ onMounted(fetchClasses);
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   padding: 20px;
+  background: var(--ion-background-color);
 }
 
 .class-card {
-  background: white;
+  background: var(--ion-card-background);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -499,6 +504,7 @@ onMounted(fetchClasses);
     transform 0.2s ease,
     box-shadow 0.2s ease;
   cursor: pointer;
+  border: 1px solid var(--ion-border-color);
 }
 
 .class-card:hover {
@@ -538,7 +544,7 @@ onMounted(fetchClasses);
 .subject-badge {
   width: 40px;
   height: 40px;
-  background: #f5f6fa;
+  background: var(--ion-color-step-100);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -557,29 +563,30 @@ onMounted(fetchClasses);
   align-items: center;
   gap: 4px;
   font-size: 0.85rem;
-  color: #57606f;
+  color: var(--ion-color-medium);
 }
 
 ion-icon {
   font-size: 16px;
+  color: var(--ion-color-medium);
 }
 
 .class-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #2f3542;
+  color: var(--ion-text-color);
   margin: 0 0 5px 0;
 }
 
 .subject-name {
   font-size: 0.9rem;
-  color: #747d8c;
+  color: var(--ion-color-medium);
   margin: 0 0 20px 0;
 }
 
 .progress-bar {
   height: 6px;
-  background: #f1f2f6;
+  background: var(--ion-color-step-100);
   border-radius: 3px;
   margin-bottom: 15px;
   overflow: hidden;
@@ -587,7 +594,7 @@ ion-icon {
 
 .progress-fill {
   height: 100%;
-  background: #3f51b5;
+  background: var(--ion-color-primary);
   border-radius: 3px;
   transition: width 0.5s ease;
 }
@@ -600,36 +607,26 @@ ion-icon {
 
 .completion-text {
   font-size: 0.8rem;
-  color: #57606f;
+  color: var(--ion-color-medium);
   font-weight: 500;
 }
 
 .arrow-icon {
-  color: #a4b0be;
+  color: var(--ion-color-medium);
   font-size: 1.2rem;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 600px) {
-  .class-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .floating-header {
-    padding: 12px 15px;
-  }
 }
 
 /* Card Container */
 .class-card {
   position: relative;
-  background: white;
+  background: var(--ion-card-background);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
+  border: 1px solid var(--ion-border-color);
 }
 
 .class-card:hover {
@@ -637,22 +634,29 @@ ion-icon {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* Smart Action Ribbon */
-.action-ribbon {
-  display: flex;
-  justify-content: space-between;
+/* Action Ribbon Container - FIXED */
+.action-ribbon.two-row {
   height: 0;
-  opacity: 0;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: height 0.3s ease;
+  background: var(--ion-color-step-50);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.action-ribbon.active {
-  height: 60px;
+.action-ribbon.two-row.active {
+  height: 120px; /* Enough height for two rows */
+  padding: 8px 0;
   opacity: 1;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px dashed rgba(var(--ion-color-primary-rgb), 0.2);
+}
+
+.ribbon-row {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  flex: 1;
 }
 
 .ribbon-button {
@@ -661,36 +665,35 @@ ion-icon {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 6px 4px;
+  margin: 0 4px;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--ion-color-medium);
-  transform: translateY(20px);
   opacity: 0;
-  transition: all 0.3s ease calc(var(--delay) * 0.1s);
+  transform: translateY(10px);
+  transition: all 0.3s calc(var(--delay) * 0.1s);
 }
 
-.action-ribbon.active .ribbon-button {
-  transform: translateY(0);
+.action-ribbon.two-row.active .ribbon-button {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .ribbon-button ion-icon {
   font-size: 1.2rem;
-  margin-bottom: 5px;
-  transition: all 0.2s ease;
+  margin-bottom: 4px;
+  color: var(--ion-color-medium);
 }
 
 .ribbon-button span {
   font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.ribbon-button:active {
-  color: var(--ion-color-primary);
-}
-
-.ribbon-button:active ion-icon {
-  transform: scale(1.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  color: var(--ion-color-medium);
 }
 
 /* Quick Rating Action */
@@ -745,16 +748,16 @@ ion-icon {
 }
 
 .math-badge {
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  background: linear-gradient(135deg, var(--math-color), #ff8e8e);
 }
 .science-badge {
-  background: linear-gradient(135deg, #4ecdc4, #88f3ed);
+  background: linear-gradient(135deg, var(--science-color), #88f3ed);
 }
 .english-badge {
-  background: linear-gradient(135deg, #ff9ff3, #fd79a8);
+  background: linear-gradient(135deg, var(--english-color), #fd79a8);
 }
 .history-badge {
-  background: linear-gradient(135deg, #feca57, #ff9f43);
+  background: linear-gradient(135deg, var(--history-color), #ff9f43);
 }
 
 /* Action Ribbon Container */
@@ -762,10 +765,12 @@ ion-icon {
   height: 0;
   overflow: hidden;
   transition: height 0.3s ease;
+  background: var(--ion-color-step-50);
+  border-radius: 8px;
 }
 
 .action-ribbon.two-row.active {
-  height: 120px; /* Adjust based on your content height */
+  height: 120px;
   padding: 8px 0;
 }
 
@@ -782,61 +787,13 @@ ion-icon {
   align-items: center;
   padding: 6px 4px;
   margin: 0 4px;
-  min-width: 0; /* Allows buttons to shrink */
-}
-
-.ribbon-button ion-icon {
-  font-size: 1.2rem;
-  margin-bottom: 2px;
-}
-
-.ribbon-button span {
-  font-size: 0.7rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* For the two-row ribbon container */
-.action-ribbon.two-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* Space between rows */
-  padding: 8px 0;
-  width: 100%;
-}
-
-/* For each individual row */
-.ribbon-row {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-}
-
-/* For buttons in both rows */
-.ribbon-button {
-  flex: 1; /* Distribute space evenly */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 4px;
-  margin: 0 4px;
-  min-width: 0; /* Allows text truncation */
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s calc(var(--delay) * 0.1s);
-}
-
-/* Show buttons when active */
-.action-ribbon.active .ribbon-button {
-  opacity: 1;
-  transform: translateY(0);
+  min-width: 0;
 }
 
 .ribbon-button ion-icon {
   font-size: 1.2rem;
   margin-bottom: 4px;
+  color: var(--ion-color-medium);
 }
 
 .ribbon-button span {
@@ -845,5 +802,134 @@ ion-icon {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  color: var(--ion-color-medium);
+}
+
+/* Dark mode specific adjustments */
+.dark .class-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .class-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.dark .floating-header {
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+}
+
+.dark .action-ribbon {
+  background: var(--ion-color-step-150);
+}
+
+.dark .action-ribbon.two-row {
+  background: var(--ion-color-step-150);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .class-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .floating-header {
+    padding: 12px 15px;
+  }
+  
+  .class-card {
+    padding: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .class-card {
+    border: 2px solid var(--ion-border-color);
+  }
+  
+  .action-ribbon {
+    border: 1px solid var(--ion-border-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .class-card {
+    transition: none;
+  }
+  
+  .class-card:hover {
+    transform: none;
+  }
+  
+  .action-ribbon {
+    transition: none;
+  }
+}
+
+/* Safe area insets */
+@supports(padding: max(0px)) {
+  .class-grid {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  
+  .floating-header {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+}
+
+/* Focus states for accessibility */
+.class-card:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.ribbon-button:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+@media (hover: hover) {
+  .class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  
+  .ribbon-button:hover {
+    color: var(--ion-color-primary);
+  }
+  
+  .ribbon-button:hover ion-icon {
+    color: var(--ion-color-primary);
+  }
+}
+
+/* Animation for cards */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.class-card {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.class-card:nth-child(odd) {
+  animation-delay: 0.1s;
+}
+
+.class-card:nth-child(even) {
+  animation-delay: 0.2s;
 }
 </style>

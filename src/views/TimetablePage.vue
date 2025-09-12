@@ -174,7 +174,7 @@ const fetchTimetable = async () => {
     error.value = false;
 
     const response = await axios.post(
-      "https://school.klgilc.com/api/timetable",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/timetable",
       {
         tutorship_id: tutorshipId,
       },
@@ -290,6 +290,7 @@ onMounted(() => {
 .header-section {
   margin-bottom: 24px;
   text-align: center;
+  background: var(--ion-background-color);
 }
 
 .title {
@@ -311,6 +312,11 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 200px;
+  background: var(--ion-background-color);
+}
+
+.loading-container ion-spinner {
+  color: var(--ion-color-primary);
 }
 
 /* Empty & Error States */
@@ -323,17 +329,21 @@ onMounted(() => {
   text-align: center;
   height: 60vh;
   padding: 20px;
+  background: var(--ion-background-color);
 }
 
 .empty-state ion-icon {
   color: var(--ion-color-medium);
   font-size: 64px;
   margin-bottom: 16px;
+  opacity: 0.7;
 }
 
 .error-state ion-icon {
+  color: var(--ion-color-danger);
   font-size: 64px;
   margin-bottom: 16px;
+  opacity: 0.8;
 }
 
 .empty-state h3,
@@ -341,7 +351,7 @@ onMounted(() => {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 8px;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .empty-state p,
@@ -349,6 +359,7 @@ onMounted(() => {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
   margin-bottom: 16px;
+  line-height: 1.4;
 }
 
 /* Timetable Cards */
@@ -356,20 +367,32 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 16px;
+  background: var(--ion-background-color);
 }
 
 .day-card {
+  background: var(--ion-card-background);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
   border-left: 4px solid var(--ion-color-primary);
+  border: 1px solid var(--ion-border-color);
 }
 
 .today-card {
   border-left: 4px solid var(--ion-color-success);
   background: rgba(var(--ion-color-success-rgb), 0.05);
+  border-color: rgba(var(--ion-color-success-rgb), 0.2);
+}
+
+.day-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--ion-border-color);
+  background: var(--ion-item-background);
+  border-radius: 12px 12px 0 0;
 }
 
 .day-title {
@@ -378,19 +401,86 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--ion-text-color);
+}
+
+.day-date {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  font-weight: 400;
 }
 
 .time-content {
-  padding-top: 0;
+  padding: 16px;
+  background: var(--ion-card-background);
+  border-radius: 0 0 12px 12px;
 }
 
 .time-content ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
+  --background: transparent;
+  --border-color: var(--ion-border-color);
+  margin-bottom: 12px;
+}
+
+.time-content ion-item:last-child {
+  margin-bottom: 0;
 }
 
 .time-content ion-icon {
   margin-right: 8px;
+  color: var(--ion-color-primary);
+}
+
+.time-slot {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--ion-color-step-50);
+  border-radius: 8px;
+  border-left: 3px solid var(--ion-color-primary);
+}
+
+.time-slot.today {
+  border-left-color: var(--ion-color-success);
+  background: rgba(var(--ion-color-success-rgb), 0.08);
+}
+
+.time-info {
+  flex: 1;
+}
+
+.time-range {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+  margin-bottom: 4px;
+}
+
+.time-subject {
+  font-size: 0.9rem;
+  color: var(--ion-text-color);
+  opacity: 0.9;
+  margin-bottom: 2px;
+}
+
+.time-location {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
+
+.time-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-primary);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
 }
 
 /* Animation for cards */
@@ -398,11 +488,121 @@ onMounted(() => {
   transform: scale(0.98);
 }
 
+.day-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark mode specific adjustments */
+.dark .day-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .today-card {
+  background: rgba(var(--ion-color-success-rgb), 0.08);
+  border-color: rgba(var(--ion-color-success-rgb), 0.3);
+}
+
+.dark .time-slot {
+  background: var(--ion-color-step-100);
+}
+
+.dark .time-slot.today {
+  background: rgba(var(--ion-color-success-rgb), 0.12);
+}
+
 /* Responsive adjustments */
 @media (min-width: 768px) {
   .timetable-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
+  
+  .day-card {
+    margin: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .timetable-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .day-card {
+    border: 2px solid var(--ion-border-color);
+  }
+  
+  .time-slot {
+    border: 1px solid var(--ion-border-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .day-card {
+    transition: none;
+  }
+  
+  .day-card:active {
+    transform: none;
+  }
+}
+
+/* Safe area insets */
+@supports(padding: max(0px)) {
+  .timetable-container {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* Focus states for accessibility */
+.day-card:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.time-slot:focus-within {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Empty state improvements */
+.empty-state .action-button {
+  margin-top: 16px;
+}
+
+.error-state .retry-button {
+  margin-top: 16px;
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.day-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.day-card:nth-child(odd) {
+  animation-delay: 0.1s;
+}
+
+.day-card:nth-child(even) {
+  animation-delay: 0.2s;
 }
 </style>

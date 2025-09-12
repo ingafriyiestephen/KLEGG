@@ -272,10 +272,10 @@ const refreshData = async () => {
 const fetchData = async () => {
   try {
     const [notificationsRes, attendancesRes] = await Promise.all([
-      axios.get("https://school.klgilc.com/api/notifications", {
+      axios.get("https://klegg-app-whh7m.ondigitalocean.app/api/notifications", {
         headers: getAuthHeaders(),
       }),
-      axios.get("https://school.klgilc.com/api/attendances", {
+      axios.get("https://klegg-app-whh7m.ondigitalocean.app/api/attendances", {
         headers: getAuthHeaders(),
       }),
     ]);
@@ -331,9 +331,28 @@ StatusBar.setOverlaysWebView({ overlay: false });
 StatusBar.setBackgroundColor({ color: "#ffffff" });
 StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
 
+const darkMode = ref(false)
+
 // Initialize data
 onMounted(async () => {
+    // Load saved preference
+    const saved = localStorage.getItem('darkMode')
   try {
+    if (saved !== null) {
+    darkMode.value = saved === 'true'
+    document.body.classList.toggle('dark', darkMode.value)
+  } else {
+    // Fall back to system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+    darkMode.value = prefersDark.matches
+    document.body.classList.toggle('dark', darkMode.value)
+
+    prefersDark.addEventListener('change', (mediaQuery) => {
+      darkMode.value = mediaQuery.matches
+      document.body.classList.toggle('dark', darkMode.value)
+    })
+  }
+
     await fetchData();
   } catch (error) {
     console.error("Initialization error:", error);
@@ -353,6 +372,7 @@ ion-toolbar {
   );
   --color: white;
   --min-height: 80px;
+  --border-color: transparent;
 }
 
 .toolbar-avatar {
@@ -385,12 +405,14 @@ ion-toolbar {
   justify-content: center;
   height: 60vh;
   text-align: center;
+  background: var(--ion-background-color);
 }
 
 .loading-container ion-spinner {
   width: 48px;
   height: 48px;
   margin-bottom: 16px;
+  color: var(--ion-color-primary);
 }
 
 .loading-container p {
@@ -403,10 +425,13 @@ ion-toolbar {
   margin: 16px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--ion-card-background);
+  border: 1px solid var(--ion-border-color);
 }
 
 ion-card-header {
   padding-bottom: 8px;
+  border-bottom: 1px solid var(--ion-border-color);
 }
 
 ion-card-title {
@@ -414,6 +439,7 @@ ion-card-title {
   align-items: center;
   font-size: 18px;
   font-weight: 600;
+  color: var(--ion-text-color);
 }
 
 ion-card-title ion-icon {
@@ -423,6 +449,7 @@ ion-card-title ion-icon {
 
 ion-card-content {
   padding-top: 0;
+  color: var(--ion-text-color);
 }
 
 /* Notification & Attendance Content */
@@ -434,7 +461,8 @@ ion-card-content {
 .notification-content p,
 .attendance-content p {
   margin-bottom: 4px;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
+  opacity: 0.9;
 }
 
 ion-note {
@@ -451,12 +479,14 @@ ion-note {
   padding: 16px 0;
   text-align: center;
   color: var(--ion-color-medium);
+  background: var(--ion-background-color);
 }
 
 .empty-state ion-icon {
   font-size: 48px;
   margin-bottom: 8px;
   opacity: 0.5;
+  color: var(--ion-color-medium);
 }
 
 .empty-state p {
@@ -467,23 +497,32 @@ ion-note {
 /* View All Button */
 .view-all-button {
   --color: var(--ion-color-primary);
+  --background: transparent;
   margin-top: 8px;
+}
+
+.view-all-button:hover {
+  --background: var(--ion-color-light-shade);
 }
 
 /* Quick Actions Grid */
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .quick-action-button {
   --padding-start: 0;
   --padding-end: 0;
-  --padding-top: 0;
-  --padding-bottom: 0;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --background: var(--ion-item-background);
+  --border-radius: 12px;
   height: 100%;
   margin: 0;
+  border: 1px solid var(--ion-border-color);
 }
 
 .quick-action-button .action-icon {
@@ -492,9 +531,14 @@ ion-note {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ion-color-light);
+  background: var(--ion-color-step-100);
   border-radius: 50%;
   margin: 0 auto 8px;
+  transition: background-color 0.2s ease;
+}
+
+.quick-action-button:hover .action-icon {
+  background: var(--ion-color-step-200);
 }
 
 .quick-action-button ion-icon {
@@ -505,39 +549,88 @@ ion-note {
 .quick-action-button ion-label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   white-space: normal;
   margin-top: 4px;
 }
 
 /* Bottom Tabs */
 ion-tab-bar {
-  --background: white;
-  --border: none;
+  --background: var(--ion-card-background);
+  --border: 1px solid var(--ion-border-color);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
   padding-top: 8px;
-  padding-bottom: 8px;
-  height: 60px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  height: auto;
+  min-height: 60px;
 }
 
 ion-tab-button {
   --color: var(--ion-color-medium);
   --color-selected: var(--ion-color-primary);
+  --background: transparent;
+  --background-focused: var(--ion-color-step-100);
 }
 
 ion-tab-button ion-icon {
   font-size: 24px;
+  margin-bottom: 4px;
 }
 
 ion-tab-button ion-label {
   font-size: 12px;
-  margin-top: 4px;
+  margin-top: 0;
+  font-weight: 500;
+}
+
+/* Dark mode specific adjustments */
+.dark .content-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .quick-action-button {
+  --background: var(--ion-color-step-150);
+  border-color: var(--ion-border-color);
+}
+
+.dark .quick-action-button .action-icon {
+  background: var(--ion-color-step-200);
+}
+
+.dark ion-tab-bar {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Focus and active states */
+.quick-action-button:focus-visible,
+ion-tab-button:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.quick-action-button:active {
+  transform: translateY(1px);
 }
 
 /* Responsive Adjustments */
 @media (max-width: 400px) {
   .quick-actions-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .quick-action-button {
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+  }
+
+  .quick-action-button .action-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .quick-action-button ion-icon {
+    font-size: 20px;
   }
 
   ion-tab-button ion-icon {
@@ -553,6 +646,50 @@ ion-tab-button ion-label {
   .content-card {
     margin: 16px auto;
     max-width: 600px;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .content-card {
+    border: 2px solid var(--ion-border-color);
+  }
+
+  .quick-action-button {
+    border: 2px solid var(--ion-border-color);
+  }
+
+  ion-tab-bar {
+    --border: 2px solid var(--ion-border-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .quick-action-button {
+    transition: none;
+  }
+  
+  .quick-action-button:active {
+    transform: none;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports(padding: max(0px)) {
+  .content-card {
+    margin-left: max(16px, env(safe-area-inset-left));
+    margin-right: max(16px, env(safe-area-inset-right));
+  }
+  
+  ion-tab-bar {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
   }
 }
 </style>

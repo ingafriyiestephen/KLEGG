@@ -180,7 +180,7 @@ const fetchNotifications = async (page = 1) => {
     if (!token) throw new Error("No authentication token found");
 
     const response = await axios.get(
-      "https://school.klgilc.com/api/notifications",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/notifications",
       {
         headers: getAuthHeaders(),
         timeout: 10000, // 10-second timeout
@@ -310,12 +310,14 @@ onMounted(() => {
   justify-content: center;
   height: 60vh;
   text-align: center;
+  background: var(--ion-background-color);
 }
 
 .loading-container ion-spinner {
   width: 48px;
   height: 48px;
   margin-bottom: 16px;
+  color: var(--ion-color-primary);
 }
 
 .loading-container p {
@@ -333,11 +335,22 @@ onMounted(() => {
   text-align: center;
   height: 60vh;
   padding: 20px;
+  background: var(--ion-background-color);
 }
 
 .error-state ion-icon,
 .empty-state ion-icon {
   margin-bottom: 16px;
+  font-size: 64px;
+  opacity: 0.8;
+}
+
+.error-state ion-icon {
+  color: var(--ion-color-danger);
+}
+
+.empty-state ion-icon {
+  color: var(--ion-color-medium);
 }
 
 .error-state h3,
@@ -345,7 +358,7 @@ onMounted(() => {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 8px;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .error-state p,
@@ -353,100 +366,276 @@ onMounted(() => {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
   margin-bottom: 16px;
+  line-height: 1.4;
 }
 
 /* Notifications List */
 .notification-item {
-  --padding-start: 12px;
-  --padding-end: 12px;
-  --inner-padding-end: 12px;
-  --border-color: var(--ion-color-light);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 16px;
+  --border-color: var(--ion-border-color);
+  --background: var(--ion-item-background);
+  margin-bottom: 1px;
 }
 
 .notification-item.unread {
-  --background: rgba(var(--ion-color-primary-rgb), 0.05);
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
+  border-left: 3px solid var(--ion-color-primary);
+}
+
+.notification-item:last-child {
+  margin-bottom: 0;
 }
 
 .notification-avatar {
   width: 48px;
   height: 48px;
-  margin-right: 12px;
+  margin-right: 16px;
+  border: 2px solid var(--ion-border-color);
+  background: var(--ion-color-step-100);
+}
+
+.notification-content {
+  flex: 1;
 }
 
 .notification-item h2 {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--ion-text-color);
+  line-height: 1.3;
 }
 
 .preview-text {
   font-size: 0.9rem;
-  color: var(--ion-color-medium);
+  color: var(--ion-text-color);
   margin-bottom: 8px;
   line-height: 1.4;
+  opacity: 0.9;
 }
 
 .notification-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 0.8rem;
   color: var(--ion-color-medium);
+  margin-top: 8px;
 }
 
 .notification-meta ion-badge {
   font-size: 0.7rem;
   font-weight: 500;
-  padding: 2px 6px;
+  padding: 4px 8px;
+  --background: var(--ion-color-step-200);
+  --color: var(--ion-text-color);
+}
+
+.notification-meta ion-badge.primary {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
 }
 
 .date {
   flex: 1;
+  color: var(--ion-color-medium);
 }
 
+/* Reactions Row */
 .reactions-row {
   display: flex;
-  gap: 4px;
-  margin: 8px 0;
+  gap: 6px;
+  margin: 12px 0 8px 0;
   flex-wrap: wrap;
 }
 
-
 .reactions-row ion-chip {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8px;
+  --background: var(--ion-color-step-100);
+  --color: var(--ion-text-color);
   height: 28px;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.reactions-row ion-chip:active {
+  --background: var(--ion-color-step-200);
 }
 
 .reactions-row ion-icon {
   margin-right: 4px;
-  font-size: 16px;
+  font-size: 14px;
+  color: var(--ion-color-primary);
 }
 
 .reactions-row ion-label {
-  font-size: 12px;
-  margin-left: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.notification-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  font-size: 0.8rem;
-  color: var(--ion-color-medium);
-}
-
+/* Comments Count */
 .comments-count {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  color: var(--ion-color-medium);
 }
 
-.unread {
-  --background: rgba(var(--ion-color-primary-rgb), 0.08);
+.comments-count ion-icon {
+  font-size: 16px;
+}
+
+/* Action Buttons */
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ion-border-color);
+}
+
+.action-button {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-radius: 6px;
+  font-size: 0.8rem;
+  height: 32px;
+}
+
+/* Dark mode specific adjustments */
+.dark .notification-item.unread {
+  --background: rgba(var(--ion-color-primary-rgb), 0.12);
+  border-left-color: var(--ion-color-primary);
+}
+
+.dark .reactions-row ion-chip {
+  --background: var(--ion-color-step-200);
+}
+
+.dark .notification-avatar {
+  background: var(--ion-color-step-200);
+  border-color: var(--ion-color-step-300);
+}
+
+/* Focus states for accessibility */
+.notification-item:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.reactions-row ion-chip:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+@media (hover: hover) {
+  .notification-item:hover {
+    --background: var(--ion-color-step-50);
+  }
+  
+  .reactions-row ion-chip:hover {
+    --background: var(--ion-color-step-150);
+  }
+}
+
+/* Animation for new notifications */
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.1);
+  }
+  50% {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.2);
+  }
+  100% {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.1);
+  }
+}
+
+.notification-item.new-notification {
+  animation: highlightPulse 2s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .notification-item {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --inner-padding-end: 12px;
+  }
+  
+  .notification-avatar {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+  }
+  
+  .reactions-row {
+    gap: 4px;
+  }
+  
+  .reactions-row ion-chip {
+    height: 26px;
+    font-size: 0.75rem;
+  }
+  
+  .notification-meta {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .notification-item {
+    border-bottom: 2px solid var(--ion-border-color);
+  }
+  
+  .notification-item.unread {
+    border-left-width: 4px;
+  }
+  
+  .reactions-row ion-chip {
+    border: 1px solid var(--ion-border-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .notification-item.new-notification {
+    animation: none;
+  }
+}
+
+/* Safe area insets */
+@supports(padding: max(0px)) {
+  .notification-item {
+    --padding-start: max(16px, env(safe-area-inset-left));
+    --padding-end: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* Empty state improvements */
+.empty-state .action-button {
+  margin-top: 16px;
+}
+
+.error-state .retry-button {
+  margin-top: 16px;
+}
+
+/* Loading animation enhancement */
+.loading-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

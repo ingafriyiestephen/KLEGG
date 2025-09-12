@@ -123,6 +123,9 @@ const token = localStorage.getItem("parisklegg_token") || "";
 const userDataString = localStorage.getItem("parisklegg_user"); // or whatever your key is
 const userData = userDataString ? JSON.parse(userDataString) : null;
 
+const darkMode = ref(false)
+
+
 // Extract values with fallbacks
 const userId = userData?.user_id || 0;
 
@@ -153,7 +156,7 @@ const checkVersion = async () => {
   loading.value = true;
   try {
     const response = await axios.get(
-      "https://school.klgilc.com/api/check_version",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/check_version",
       {
         headers: getAuthHeaders(),
         timeout: 20000, // 20-second timeout
@@ -181,7 +184,7 @@ const handleLogin = async () => {
 
   try {
     const response = await axios.post(
-      "https://school.klgilc.com/api/login",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/login",
       {
         email: credentials.email,
         password: credentials.password,
@@ -231,8 +234,38 @@ StatusBar.setOverlaysWebView({ overlay: false });
 StatusBar.setBackgroundColor({ color: "#ffffff" });
 StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
 
-onMounted(checkVersion);
+
+// Initialize data
+onMounted(async () => {
+    // Load saved preference
+    const saved = localStorage.getItem('darkMode')
+  try {
+    if (saved !== null) {
+    darkMode.value = saved === 'true'
+    document.body.classList.toggle('dark', darkMode.value)
+  } else {
+    // Fall back to system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+    darkMode.value = prefersDark.matches
+    document.body.classList.toggle('dark', darkMode.value)
+
+    prefersDark.addEventListener('change', (mediaQuery) => {
+      darkMode.value = mediaQuery.matches
+      document.body.classList.toggle('dark', darkMode.value)
+    })
+  }
+
+    
+    await checkVersion();
+  
+  } catch (error) {
+    console.error("Initialization error:", error);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
+
 
 <style scoped>
 /* Background with gradient */
@@ -252,6 +285,15 @@ onMounted(checkVersion);
   z-index: 0;
 }
 
+/* Dark mode background adjustment */
+.dark .login-background {
+  background: linear-gradient(
+    135deg,
+    var(--ion-color-primary-shade),
+    var(--ion-color-secondary-shade)
+  );
+}
+
 /* Main container */
 .login-container {
   position: relative;
@@ -260,97 +302,216 @@ onMounted(checkVersion);
   flex-direction: column;
   height: 100%;
   padding-top: 2rem;
+  background: var(--ion-background-color);
 }
 
 /* Logo section */
 .logo-section {
   text-align: center;
   margin-bottom: 2.5rem;
+  padding: 0 1rem;
 }
 
 .logo-image {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 3px solid rgba(255, 255, 255, 0.8);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  background-color: white;
+  background-color: var(--ion-card-background);
   object-fit: contain;
+  backdrop-filter: blur(10px);
 }
 
 .app-title {
-  color: white;
   margin: 1rem 0 0.5rem;
   font-size: 1.75rem;
   font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .app-subtitle {
-  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   font-size: 0.9rem;
   font-weight: 400;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Login form */
 .login-form {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: var(--ion-card-background);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   margin: 0 1rem;
+  border: 1px solid var(--ion-border-color);
+}
+
+.dark .login-form {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .form-item {
-  --background: #f8f9fa;
-  --border-radius: 12px;
-  --padding-start: 0.75rem;
-  --inner-padding-end: 0.75rem;
-  margin-bottom: 1rem;
+  --background: var(--ion-color-step-50);
+  --border-radius: 16px;
+  --padding-start: 1rem;
+  --inner-padding-end: 0.5rem;
+  margin-bottom: 1.25rem;
+  --border-color: var(--ion-border-color);
+  --highlight-color-focused: var(--ion-color-primary);
+}
+
+.form-item:focus-within {
+  --background: var(--ion-color-step-100);
+  --border-color: var(--ion-color-primary);
 }
 
 .input-icon {
   color: var(--ion-color-primary);
   font-size: 1.2rem;
-  margin-right: 0.5rem;
+  margin-right: 0.75rem;
 }
 
 .custom-input {
-  --padding-top: 0.75rem;
-  --padding-bottom: 0.75rem;
+  --padding-top: 1rem;
+  --padding-bottom: 1rem;
   --padding-start: 0.5rem;
+  --color: var(--ion-text-color);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 0.6;
+  font-size: 1rem;
 }
 
 .password-toggle {
   --padding-start: 0;
   --padding-end: 0;
   --color: var(--ion-color-medium);
+  --background-hover: var(--ion-color-step-100);
+}
+
+.password-toggle:active {
+  --color: var(--ion-color-primary);
 }
 
 /* Login button */
 .login-button {
-  --border-radius: 12px;
-  --padding-top: 1rem;
-  --padding-bottom: 1rem;
-  margin-top: 1.5rem;
+  --border-radius: 16px;
+  --padding-top: 1.25rem;
+  --padding-bottom: 1.25rem;
+  --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+  margin-top: 2rem;
   font-weight: 600;
-  height: 48px;
+  font-size: 1.1rem;
+  height: 56px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.login-button:active {
+  --box-shadow: 0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3);
+  transform: translateY(1px);
 }
 
 /* Form footer */
 .form-footer {
   display: flex;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+  padding: 1rem;
 }
 
 .forgot-password {
   --color: var(--ion-color-medium);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   text-transform: none;
+  font-weight: 500;
+  --background-hover: var(--ion-color-step-50);
+  --background-activated: var(--ion-color-step-100);
+}
+
+.forgot-password:active {
+  --color: var(--ion-color-primary);
+}
+
+/* Additional options */
+.alternative-options {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+.alternative-text {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.alternative-text::before,
+.alternative-text::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: var(--ion-border-color);
+}
+
+.alternative-text::before {
+  left: 0;
+}
+
+.alternative-text::after {
+  right: 0;
+}
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.social-button {
+  --border-radius: 12px;
+  --padding-start: 1.5rem;
+  --padding-end: 1.5rem;
+  --background: var(--ion-color-step-100);
+  --color: var(--ion-text-color);
+  --background-hover: var(--ion-color-step-200);
+  --background-activated: var(--ion-color-step-300);
+  font-size: 0.9rem;
 }
 
 /* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-background {
+    height: 35vh;
+    border-bottom-left-radius: 25% 15%;
+    border-bottom-right-radius: 25% 15%;
+  }
+
+  .login-form {
+    padding: 1.5rem;
+    margin: 0 0.75rem;
+  }
+
+  .logo-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .app-title {
+    font-size: 1.5rem;
+  }
+
+  .login-button {
+    height: 52px;
+    font-size: 1rem;
+  }
+}
+
 @media (min-width: 768px) {
   .login-container {
     max-width: 450px;
@@ -360,6 +521,127 @@ onMounted(checkVersion);
 
   .login-background {
     height: 45vh;
+    border-bottom-left-radius: 40% 25%;
+    border-bottom-right-radius: 40% 25%;
+  }
+
+  .login-form {
+    padding: 2.5rem;
+    margin: 0;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .login-form {
+    border: 2px solid var(--ion-border-color);
+  }
+
+  .form-item {
+    --border-color: var(--ion-border-color);
+    border: 1px solid var(--ion-border-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .login-button {
+    transition: none;
+  }
+
+  .login-button:active {
+    transform: none;
+  }
+}
+
+/* Safe area insets */
+@supports(padding: max(0px)) {
+  .login-container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .login-form {
+    margin-left: max(0.75rem, env(safe-area-inset-left));
+    margin-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}
+
+/* Focus states for accessibility */
+.form-item:focus-within {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.login-button:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.forgot-password:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Loading state for button */
+.login-button.loading {
+  --background: var(--ion-color-step-300);
+  pointer-events: none;
+}
+
+/* Error state */
+.form-item.error {
+  --border-color: var(--ion-color-danger);
+  --background: rgba(var(--ion-color-danger-rgb), 0.05);
+}
+
+.error-message {
+  color: var(--ion-color-danger);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+/* Success state */
+.form-item.success {
+  --border-color: var(--ion-color-success);
+  --background: rgba(var(--ion-color-success-rgb), 0.05);
+}
+
+/* Animation for form elements */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.logo-section {
+  animation: slideInUp 0.4s ease-out;
+}
+
+/* Hover effects */
+@media (hover: hover) {
+  .login-button:hover {
+    --box-shadow: 0 6px 20px rgba(var(--ion-color-primary-rgb), 0.4);
+    transform: translateY(-1px);
+  }
+
+  .forgot-password:hover {
+    --color: var(--ion-color-primary);
+  }
+
+  .password-toggle:hover {
+    --color: var(--ion-color-primary);
   }
 }
 </style>

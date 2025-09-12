@@ -224,7 +224,7 @@ const fetchExamResults = async () => {
     };
 
     const response = await axios.post(
-      "https://school.klgilc.com/api/exams",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/exams",
       {
         tutorship_id: tutorshipId,
         student_id: userId,
@@ -310,6 +310,8 @@ onMounted(() => {
   gap: 8px;
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--ion-text-color);
+  white-space: pre-line;
 }
 
 .summary-title ion-icon {
@@ -406,6 +408,12 @@ onMounted(() => {
   margin: 16px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.details-card ion-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
 }
 
 .detail-row {

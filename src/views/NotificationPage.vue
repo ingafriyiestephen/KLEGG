@@ -29,7 +29,7 @@
       <div v-else-if="notification">
         <ion-card class="notification-card">
           <ion-card-header>
-            <ion-card-title>{{ notification.title }}</ion-card-title>
+            <ion-card-title class="notification-title">{{ notification.title }}</ion-card-title>
             <ion-card-subtitle>
               {{ formatDate(notification.created_at) }}
             </ion-card-subtitle>
@@ -355,7 +355,7 @@ const loadNotification = async () => {
     error.value = false;
 
     const response = await axios.get(
-      `https://school.klgilc.com/api/notifications/${notificationId}`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}`,
       {
         headers: getAuthHeaders(),
         timeout: 20000, // 20-second timeout
@@ -368,7 +368,7 @@ const loadNotification = async () => {
     // Mark as read
     if (response.data.is_read === 0) {
       await axios.post(
-        `https://school.klgilc.com/api/notifications/${notificationId}/read`,
+        `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/read`,
         {},
         {
           headers: getAuthHeaders(),
@@ -391,7 +391,7 @@ const loadNotification = async () => {
 const loadComments = async (page = 1) => {
   try {
     const response = await axios.get(
-      `https://school.klgilc.com/api/notifications/${notificationId}/comments`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/comments`,
       {
         params: { page },
         headers: getAuthHeaders(),
@@ -423,7 +423,7 @@ const addComment = async () => {
 
   try {
     const response = await axios.post(
-      `https://school.klgilc.com/api/notifications/${notificationId}/create_comment`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/create_comment`,
       { comment_body: newComment.value },
       {
         headers: getAuthHeaders(),
@@ -460,7 +460,7 @@ const addComment = async () => {
 const deleteComment = async (commentId: number) => {
   deletingCommentId.value = commentId;
   try {
-    await axios.delete(`https://school.klgilc.com/api/comments/${commentId}`, {
+    await axios.delete(`https://klegg-app-whh7m.ondigitalocean.app/api/comments/${commentId}`, {
       headers: getAuthHeaders(),
       timeout: 10000, // 10-second timeout
     });
@@ -517,7 +517,7 @@ const voteComment = async (
 
     // API call
     const response = await axios.post(
-      `https://school.klgilc.com/api/comments/${commentId}/vote`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/comments/${commentId}/vote`,
       { vote_type: voteType },
       {
         headers: getAuthHeaders(),
@@ -546,7 +546,7 @@ const addReaction = async (type: string) => {
   showReactionPicker.value = false;
   try {
     const response = await axios.post(
-      `https://school.klgilc.com/api/notifications/${notificationId}/reactions`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/reactions`,
       {
         reaction_type: type,
       },
@@ -573,7 +573,7 @@ const removeReaction = async () => {
   isReacting.value = true;
   try {
     const response = await axios.delete(
-      `https://school.klgilc.com/api/notifications/${notificationId}/delete_reaction`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/delete_reaction`,
       {
         headers: getAuthHeaders(),
         timeout: 10000, // 10-second timeout
@@ -668,13 +668,14 @@ onMounted(() => {
 
 .error-state ion-icon {
   margin-bottom: 16px;
+  color: var(--ion-color-medium);
 }
 
 .error-state h3 {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 8px;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .error-state p {
@@ -688,13 +689,19 @@ onMounted(() => {
   margin: 0;
   border-radius: 0;
   box-shadow: none;
-  border-bottom: 1px solid var(--ion-color-light);
+  border-bottom: 1px solid var(--ion-border-color);
+  background: var(--ion-card-background);
+}
+
+.notification-title {
+  color: var(--ion-text-color);
+  white-space: pre-line;
 }
 
 .notification-body {
   font-size: 1rem;
   line-height: 1.5;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   white-space: pre-line;
 }
 
@@ -704,17 +711,31 @@ onMounted(() => {
   gap: 8px;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid var(--ion-color-light);
+  border-top: 1px solid var(--ion-border-color);
+}
+
+.reaction-button {
+  --color: var(--ion-color-medium);
+  --background: var(--ion-item-background);
+  --background-hover: var(--ion-color-light-shade);
+  --background-activated: var(--ion-color-light-tint);
 }
 
 /* Comments Section */
 .comments-section {
   margin-top: 16px;
+  background: var(--ion-background-color);
 }
 
 .comment-item {
   --padding-start: 0;
   --inner-padding-end: 0;
+  --background: var(--ion-item-background);
+  border-bottom: 1px solid var(--ion-border-color);
+}
+
+.comment-item:last-child {
+  border-bottom: none;
 }
 
 .comment-item ion-avatar {
@@ -726,12 +747,14 @@ onMounted(() => {
 .comment-item h3 {
   font-size: 0.9rem;
   font-weight: 500;
+  color: var(--ion-text-color);
 }
 
 .comment-item p {
   font-size: 0.9rem;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   margin: 4px 0;
+  opacity: 0.9;
 }
 
 .comment-date {
@@ -745,46 +768,162 @@ onMounted(() => {
   bottom: 0;
   background: var(--ion-background-color);
   padding: 8px;
-  border-top: 1px solid var(--ion-color-light);
+  border-top: 1px solid var(--ion-border-color);
 }
 
 .comment-input-container ion-textarea {
-  background: var(--ion-color-light);
+  background: var(--ion-color-step-100);
   border-radius: 20px;
   --padding-start: 12px;
   --padding-end: 12px;
   font-size: 0.9rem;
+  --color: var(--ion-text-color);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 0.6;
 }
 
 /* Reaction Picker */
+ion-popover {
+  --background: var(--ion-card-background);
+  --color: var(--ion-text-color);
+}
+
 ion-popover ion-content {
   --padding-start: 8px;
   --padding-end: 8px;
   --padding-top: 8px;
   --padding-bottom: 8px;
+  --background: var(--ion-card-background);
 }
 
-.reactions-container {
+.reaction-picker-buttons {
   display: flex;
-  align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
+}
+
+.reaction-picker-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --background: var(--ion-item-background);
+  --color: var(--ion-text-color);
+  --border-radius: 16px;
+  font-size: 1.2rem;
+}
+
+/* Vote Buttons */
+.vote-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 8px;
+  background: var(--ion-item-background);
+  border-radius: 20px;
+  padding: 4px;
+}
+
+.vote-button {
+  --color: var(--ion-color-medium);
+  --background: transparent;
+  --background-hover: var(--ion-color-light-shade);
+  --background-activated: var(--ion-color-light-tint);
+}
+
+.vote-button.active {
+  --color: var(--ion-color-primary);
+}
+
+.vote-count {
+  font-size: 0.8em;
+  margin: 4px 0;
+  color: var(--ion-text-color);
+  font-weight: 500;
 }
 
 /* Ensure spinner and icons have consistent sizing */
 ion-icon {
   width: 16px;
   height: 16px;
+  color: var(--ion-color-medium);
 }
 
-.vote-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Status indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ion-color-success);
   margin-right: 8px;
 }
 
-.vote-count {
-  font-size: 0.8em;
-  margin-left: 4px;
+.status-indicator.offline {
+  background: var(--ion-color-medium);
+}
+
+/* Badge styling */
+.notification-badge {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 40vh;
+  padding: 20px;
+  color: var(--ion-color-medium);
+}
+
+.empty-state ion-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .comment-item {
+    --padding-start: 8px;
+    --padding-end: 8px;
+  }
+  
+  .vote-buttons {
+    margin-right: 4px;
+    padding: 2px;
+  }
+}
+
+/* Focus states for accessibility */
+.comment-input-container ion-textarea:focus-within {
+  background: var(--ion-color-step-200);
+  outline: 2px solid var(--ion-color-primary-tint);
+}
+
+.reaction-button:focus,
+.vote-button:focus {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Animation for new items */
+.notification-card.new-item {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

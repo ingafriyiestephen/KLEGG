@@ -97,7 +97,7 @@
                   >
                     {{ record.student_attendance }}
                   </ion-text>
-                  <ion-text class="attendance-date">
+                  <ion-text class="attendance-date bal-text-color">
                     {{
                       formatDate(record.attendance_date || record.created_at)
                     }}
@@ -107,22 +107,22 @@
                 <div class="attendance-details">
                   <div class="detail-row">
                     <ion-icon :icon="personOutline"></ion-icon>
-                    <ion-text>{{ record.student_name }}</ion-text>
+                    <ion-text class="bal-text-color">{{ record.student_name }}</ion-text>
                   </div>
 
                   <div class="detail-row">
                     <ion-icon :icon="schoolOutline"></ion-icon>
-                    <ion-text>{{ record.teacher_name }}</ion-text>
+                    <ion-text class="bal-text-color">{{ record.teacher_name }}</ion-text>
                   </div>
 
                   <div class="detail-row" v-if="record.attendance_code">
                     <ion-icon :icon="barcodeOutline"></ion-icon>
-                    <ion-text>Code: {{ record.attendance_code }}</ion-text>
+                    <ion-text class="bal-text-color">Code: {{ record.attendance_code }}</ion-text>
                   </div>
 
                   <div class="detail-row" v-if="record.remark">
                     <ion-icon :icon="documentTextOutline"></ion-icon>
-                    <ion-text>{{ record.remark }}</ion-text>
+                    <ion-text class="bal-text-color">{{ record.remark }}</ion-text>
                   </div>
                 </div>
               </ion-label>
@@ -291,7 +291,7 @@ const fetchAttendance = async () => {
     absentCount.value = 0;
 
     const response = await axios.get(
-      "https://school.klgilc.com/api/attendances",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/attendances",
       {
         headers: getAuthHeaders(),
         timeout: 20000, // 20-second timeout
@@ -456,6 +456,11 @@ onMounted(() => {
   opacity: 0.8;
   display: block;
   color: var(--ion-color-light);
+}
+
+.bal-text-color {
+  color: var(--ion-text-color);
+  white-space: pre-line;
 }
 
 /* Loading State */

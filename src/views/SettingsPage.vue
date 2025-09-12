@@ -22,6 +22,28 @@
       </div>
 
       <IonList lines="full" class="settings-list">
+        <IonList-header>
+          <ion-label>Appearance</ion-label>
+        </IonList-header>
+        
+        <ion-item lines="none">
+          <IonIcon slot="start" :icon="moonOutline" color="medium" />
+          <IonLabel>Dark Mode</IonLabel>
+          <ion-toggle
+            slot="end"
+            v-model="darkMode"
+            @ionChange="toggleDarkTheme($event.detail.checked)"
+          ></ion-toggle>
+        </ion-item>
+
+      </IonList>
+
+
+      <IonList lines="full" class="settings-list">
+        <IonList-header>
+          <ion-label>General</ion-label>  
+        </IonList-header>
+
         <IonItem
           button
           :detail="true"
@@ -77,7 +99,7 @@
         <ion-alert
           trigger="about-alert"
           header="Klegg"
-          sub-header="Version 1.0.4"
+          sub-header="Version 1.0.6"
           message="Ⓒ 2025 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
         ></ion-alert>
@@ -118,6 +140,8 @@ import {
   IonIcon,
   IonButton,
   IonLoading,
+  IonToggle,
+  IonListHeader
 } from "@ionic/vue";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Toast } from "@capacitor/toast";
@@ -129,7 +153,9 @@ import {
   shareOutline,
   informationCircleOutline,
   logOutOutline,
+  moonOutline
 } from "ionicons/icons";
+import { refreshOutline } from 'ionicons/icons';
 
 const router = useRouter();
 const defaultAvatar = "https://www.gravatar.com/avatar/?d=mp"; // Default profile pic
@@ -146,7 +172,18 @@ const loading = ref(false);
 const token = localStorage.getItem("parisklegg_token") || "";
 let global_user_id: number | null = null;
 
+
+
+const darkMode = ref(false)
+
+const toggleDarkTheme = (shouldEnable:any) => {
+  document.body.classList.toggle('dark', shouldEnable)
+  localStorage.setItem('darkMode', shouldEnable)
+}
+
 onMounted(async () => {
+  // Load saved preference
+  const saved = localStorage.getItem('darkMode')
   const userData = localStorage.getItem("parisklegg_user");
   if (userData) {
     const parsedUserData = JSON.parse(userData);
@@ -159,6 +196,25 @@ onMounted(async () => {
     }
     console.log("User data:", parsedUserData.user_id);
   }
+
+
+  if (saved !== null) {
+    darkMode.value = saved === 'true'
+    document.body.classList.toggle('dark', darkMode.value)
+  } else {
+    // Fall back to system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+    darkMode.value = prefersDark.matches
+    document.body.classList.toggle('dark', darkMode.value)
+
+    prefersDark.addEventListener('change', (mediaQuery) => {
+      darkMode.value = mediaQuery.matches
+      document.body.classList.toggle('dark', darkMode.value)
+    })
+  }
+
+
+
 });
 
 StatusBar.setOverlaysWebView({ overlay: false });
@@ -183,7 +239,7 @@ const logOut = async () => {
   loading.value = true;
   try {
     const response = await axios.post(
-      `https://school.klgilc.com/api/logout`,
+      `https://klegg-app-whh7m.ondigitalocean.app/api/logout`,
       {
         user_id: global_user_id,
         bearer_token: token,

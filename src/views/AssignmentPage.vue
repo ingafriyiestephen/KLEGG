@@ -98,7 +98,7 @@
                   </ion-badge>
                 </div>
 
-                <div class="assignment-meta">
+                <div class="assignment-meta theme-text-eight">
                   <ion-text class="assignment-date">
                     <ion-icon :icon="calendarOutline"></ion-icon>
                     Posted: {{ formatDate(assignment.created_at) }}
@@ -106,7 +106,7 @@
                 </div>
 
                 <div class="assignment-notes" v-if="assignment.additional_note">
-                  <ion-text>{{ assignment.additional_note }}</ion-text>
+                  <ion-text class="theme-text-nine">{{ assignment.additional_note }}</ion-text>
                 </div>
 
                 <div class="assignment-footer">
@@ -330,7 +330,7 @@ const fetchAssignments = async () => {
     openCount.value = 0;
 
     const response = await axios.post(
-      "https://school.klgilc.com/api/assignment",
+      "https://klegg-app-whh7m.ondigitalocean.app/api/assignment",
       {
         tutorship_id: tutorshipId,
       },
@@ -370,7 +370,7 @@ const fetchAssignments = async () => {
 };
 
 const downloadFile = (filename: string) => {
-  window.open(`https://school.klgilc.com/files/${filename}`, "_blank");
+  window.open(`https://klegg-app-whh7m.ondigitalocean.app/files/${filename}`, "_blank");
 };
 
 const shareAssignment = (assignment: Assignment) => {
@@ -502,6 +502,16 @@ onMounted(() => {
   opacity: 0.8;
   display: block;
   color: var(--ion-color-light);
+}
+
+.theme-text-nine {
+  opacity: 0.9;
+  color: var(--ion-text-color);
+}
+
+.theme-text-eight {
+  opacity: 0.9;
+  color: var(--ion-text-color);
 }
 
 /* Loading State */
