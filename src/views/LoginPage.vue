@@ -1,9 +1,6 @@
 <template>
   <ion-page>
     <ion-content class="ion-padding" :fullscreen="true">
-      <!-- Background Gradient -->
-      <div class="login-background"></div>
-
       <!-- Content Container -->
       <div class="login-container">
         <!-- Logo Section -->
@@ -124,7 +121,6 @@ const userDataString = localStorage.getItem("parisklegg_user"); // or whatever y
 const userData = userDataString ? JSON.parse(userDataString) : null;
 
 const darkMode = ref(false)
-
 
 // Extract values with fallbacks
 const userId = userData?.user_id || 0;
@@ -268,41 +264,15 @@ onMounted(async () => {
 
 
 <style scoped>
-/* Background with gradient */
-.login-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40vh;
-  background: linear-gradient(
-    135deg,
-    var(--ion-color-primary),
-    var(--ion-color-secondary)
-  );
-  border-bottom-left-radius: 30% 20%;
-  border-bottom-right-radius: 30% 20%;
-  z-index: 0;
-}
-
-/* Dark mode background adjustment */
-.dark .login-background {
-  background: linear-gradient(
-    135deg,
-    var(--ion-color-primary-shade),
-    var(--ion-color-secondary-shade)
-  );
-}
-
 /* Main container */
 .login-container {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding-top: 2rem;
-  background: var(--ion-background-color);
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+  padding: 1rem;
+  padding-top: max(2rem, env(safe-area-inset-top));
 }
 
 /* Logo section */
@@ -310,50 +280,51 @@ onMounted(async () => {
   text-align: center;
   margin-bottom: 2.5rem;
   padding: 0 1rem;
+  width: 100%;
+  max-width: 400px;
 }
 
 .logo-image {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 3px solid var(--ion-color-primary);
   background-color: var(--ion-card-background);
   object-fit: contain;
-  backdrop-filter: blur(10px);
 }
 
 .app-title {
-  margin: 1rem 0 0.5rem;
+  margin: 1.5rem 0 0.5rem;
   font-size: 1.75rem;
   font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: var(--ion-color-primary);
 }
 
 .app-subtitle {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 400;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: var(--ion-color-medium);
 }
 
 /* Login form */
 .login-form {
   background: var(--ion-card-background);
-  border-radius: 24px;
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  margin: 0 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 400px;
   border: 1px solid var(--ion-border-color);
 }
 
 .dark .login-form {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .form-item {
   --background: var(--ion-color-step-50);
-  --border-radius: 16px;
+  --border-radius: 12px;
   --padding-start: 1rem;
   --inner-padding-end: 0.5rem;
   margin-bottom: 1.25rem;
@@ -395,10 +366,10 @@ onMounted(async () => {
 
 /* Login button */
 .login-button {
-  --border-radius: 16px;
+  --border-radius: 12px;
   --padding-top: 1.25rem;
   --padding-bottom: 1.25rem;
-  --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+  --box-shadow: 0 2px 8px rgba(var(--ion-color-primary-rgb), 0.2);
   margin-top: 2rem;
   font-weight: 600;
   font-size: 1.1rem;
@@ -409,7 +380,7 @@ onMounted(async () => {
 }
 
 .login-button:active {
-  --box-shadow: 0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3);
+  --box-shadow: 0 1px 4px rgba(var(--ion-color-primary-rgb), 0.2);
   transform: translateY(1px);
 }
 
@@ -434,67 +405,15 @@ onMounted(async () => {
   --color: var(--ion-color-primary);
 }
 
-/* Additional options */
-.alternative-options {
-  text-align: center;
-  margin-top: 2rem;
-  padding: 0 1rem;
-}
-
-.alternative-text {
-  color: var(--ion-color-medium);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  position: relative;
-}
-
-.alternative-text::before,
-.alternative-text::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 30%;
-  height: 1px;
-  background: var(--ion-border-color);
-}
-
-.alternative-text::before {
-  left: 0;
-}
-
-.alternative-text::after {
-  right: 0;
-}
-
-.social-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.social-button {
-  --border-radius: 12px;
-  --padding-start: 1.5rem;
-  --padding-end: 1.5rem;
-  --background: var(--ion-color-step-100);
-  --color: var(--ion-text-color);
-  --background-hover: var(--ion-color-step-200);
-  --background-activated: var(--ion-color-step-300);
-  font-size: 0.9rem;
-}
-
 /* Responsive adjustments */
 @media (max-width: 480px) {
-  .login-background {
-    height: 35vh;
-    border-bottom-left-radius: 25% 15%;
-    border-bottom-right-radius: 25% 15%;
+  .login-container {
+    padding: 0.5rem;
+    padding-top: max(1.5rem, env(safe-area-inset-top));
   }
-
+  
   .login-form {
     padding: 1.5rem;
-    margin: 0 0.75rem;
   }
 
   .logo-image {
@@ -514,57 +433,7 @@ onMounted(async () => {
 
 @media (min-width: 768px) {
   .login-container {
-    max-width: 450px;
-    margin: 0 auto;
-    padding-top: 3rem;
-  }
-
-  .login-background {
-    height: 45vh;
-    border-bottom-left-radius: 40% 25%;
-    border-bottom-right-radius: 40% 25%;
-  }
-
-  .login-form {
-    padding: 2.5rem;
-    margin: 0;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .login-form {
-    border: 2px solid var(--ion-border-color);
-  }
-
-  .form-item {
-    --border-color: var(--ion-border-color);
-    border: 1px solid var(--ion-border-color);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .login-button {
-    transition: none;
-  }
-
-  .login-button:active {
-    transform: none;
-  }
-}
-
-/* Safe area insets */
-@supports(padding: max(0px)) {
-  .login-container {
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
-
-  .login-form {
-    margin-left: max(0.75rem, env(safe-area-inset-left));
-    margin-right: max(0.75rem, env(safe-area-inset-right));
+    padding-top: max(3rem, env(safe-area-inset-top));
   }
 }
 
@@ -632,7 +501,7 @@ onMounted(async () => {
 /* Hover effects */
 @media (hover: hover) {
   .login-button:hover {
-    --box-shadow: 0 6px 20px rgba(var(--ion-color-primary-rgb), 0.4);
+    --box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.3);
     transform: translateY(-1px);
   }
 
