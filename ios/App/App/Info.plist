@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Klegg</string>
+	<string>Klegg</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,53 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+
+	<!-- Updated App Transport Security settings -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Option 1: Allow all loads (easier for development) -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		
+		<!-- Option 2: More restrictive approach (use if Option 1 doesn't work) -->
+		<!--
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>klegg-app-whh7m.ondigitalocean.app</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+		-->
+	</dict>
+
+	<!-- Additional Capacitor-specific settings -->
+	<key>Scheme</key>
+	<dict>
+		<key>AppLinks</key>
+		<dict>
+			<key>apps</key>
+			<array/>
+			<key>details</key>
+			<array/>
+		</dict>
+	</dict>
+
 </dict>
 </plist>

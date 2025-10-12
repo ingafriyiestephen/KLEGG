@@ -99,7 +99,7 @@
         <ion-alert
           trigger="about-alert"
           header="Klegg"
-          sub-header="Version 1.0.7"
+          sub-header="Version 1.0.1"
           message="Ⓒ 2025 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
         ></ion-alert>
