@@ -1,0 +1,1 @@
+System.register(["./index-legacy-DGDcVX8Z.js"],function(e,t){"use strict";var n,r;return{setters:[function(e){n=e.ae,r=e.af}],execute:function(){e("T",n("Toast",{web:function(){return r(function(){return t.import("./web-legacy-C-4_fyIo.js")},void 0).then(function(e){return new e.ToastWeb})}}))}}});
