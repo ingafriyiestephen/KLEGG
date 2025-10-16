@@ -90,7 +90,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { updateStatusBar } from '@/utils/statusBar';
 import axios from 'axios';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
@@ -168,11 +168,28 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${token}`,
 });
 
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
+
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
+
 onMounted(() => {
-  StatusBar.setOverlaysWebView({ overlay: false });
-  StatusBar.setBackgroundColor({ color: "#ffffff" });
-  StatusBar.setStyle({ style: Style.Light });
+  initThemeDetection();
 });
+
+
 </script>
 
 <style scoped>

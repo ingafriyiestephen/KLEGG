@@ -133,13 +133,16 @@ import {
   bookOutline,
   starHalfOutline,
   checkmarkOutline,
+  schoolOutline,
+  peopleCircleOutline,
+  desktopOutline,
 } from "ionicons/icons";
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
 import { useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { updateStatusBar } from '@/utils/statusBar';
 
 const token = localStorage.getItem("parisklegg_token") || "";
 
@@ -233,7 +236,7 @@ const getSubjectEmoji = (subject: any) => {
 };
 
 const firstRowActions = [
-  { id: 1, icon: calendarOutline, label: "Timetable", url: "timetable" },
+  { id: 1, icon: desktopOutline, label: "Classroom", url: "classroom" },
   { id: 2, icon: peopleOutline, label: "Attendance", url: "attendance" },
   { id: 3, icon: bookOutline, label: "Assignment", url: "assignment" },
 ];
@@ -294,15 +297,32 @@ const handleFetchError = (error: unknown) => {
   });
 };
 
-StatusBar.setOverlaysWebView({ overlay: false });
-StatusBar.setBackgroundColor({ color: "#ffffff" });
-StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
 
 onIonViewWillEnter(async () => {
   await fetchClasses();
 });
 
-onMounted(fetchClasses);
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
+
+onMounted(() => {
+  initThemeDetection();
+  fetchClasses();
+});
+
 </script>
 
 <style scoped>

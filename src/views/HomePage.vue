@@ -174,11 +174,12 @@ import {
   timeOutline,
   refreshOutline,
 } from "ionicons/icons";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
-import { StatusBar, Style } from "@capacitor/status-bar";
-import { ref, computed, onMounted } from "vue";
+import { updateStatusBar } from '@/utils/statusBar';
+
 
 interface Notification {
   id: number;
@@ -327,32 +328,27 @@ const handleFetchError = (error: unknown) => {
   });
 };
 
-StatusBar.setOverlaysWebView({ overlay: false });
-StatusBar.setBackgroundColor({ color: "#ffffff" });
-StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
 
-const darkMode = ref(false)
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
 
 // Initialize data
 onMounted(async () => {
-    // Load saved preference
-    const saved = localStorage.getItem('darkMode')
   try {
-    if (saved !== null) {
-    darkMode.value = saved === 'true'
-    document.body.classList.toggle('dark', darkMode.value)
-  } else {
-    // Fall back to system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-    darkMode.value = prefersDark.matches
-    document.body.classList.toggle('dark', darkMode.value)
-
-    prefersDark.addEventListener('change', (mediaQuery) => {
-      darkMode.value = mediaQuery.matches
-      document.body.classList.toggle('dark', darkMode.value)
-    })
-  }
-
+    initThemeDetection();
     await fetchData();
   } catch (error) {
     console.error("Initialization error:", error);
@@ -360,6 +356,7 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
 </script>
 
 <style scoped>

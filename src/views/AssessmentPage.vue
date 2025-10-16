@@ -121,10 +121,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { onIonViewWillEnter } from "@ionic/vue";
 import { useRoute } from "vue-router";
 import axios from "axios";
 import { Toast } from "@capacitor/toast";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { updateStatusBar } from '@/utils/statusBar';
 import { useRouter } from "vue-router";
 import {
   IonPage,
@@ -300,13 +301,34 @@ const handleFetchError = (error: unknown) => {
   });
 };
 
-StatusBar.setOverlaysWebView({ overlay: false });
-StatusBar.setBackgroundColor({ color: "#ffffff" });
-StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
+
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
+
 
 onMounted(() => {
+  initThemeDetection();
   fetchAssessments();
 });
+
+onIonViewWillEnter(async () => {
+  initThemeDetection();
+});
+
+
 </script>
 
 <style scoped>

@@ -110,7 +110,7 @@ import {
   eyeOffOutline,
 } from "ionicons/icons";
 import axios from "axios";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { updateStatusBar } from '@/utils/statusBar';
 import { useRouter } from "vue-router";
 import { ref, reactive, onMounted } from "vue";
 
@@ -120,7 +120,6 @@ const token = localStorage.getItem("parisklegg_token") || "";
 const userDataString = localStorage.getItem("parisklegg_user"); // or whatever your key is
 const userData = userDataString ? JSON.parse(userDataString) : null;
 
-const darkMode = ref(false)
 
 // Extract values with fallbacks
 const userId = userData?.user_id || 0;
@@ -226,32 +225,28 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${token}`,
 });
 
-StatusBar.setOverlaysWebView({ overlay: false });
-StatusBar.setBackgroundColor({ color: "#ffffff" });
-StatusBar.setStyle({ style: Style.Light }); // Options: Light, Dark, Default
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
+
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
 
 
 // Initialize data
 onMounted(async () => {
-    // Load saved preference
-    const saved = localStorage.getItem('darkMode')
   try {
-    if (saved !== null) {
-    darkMode.value = saved === 'true'
-    document.body.classList.toggle('dark', darkMode.value)
-  } else {
-    // Fall back to system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-    darkMode.value = prefersDark.matches
-    document.body.classList.toggle('dark', darkMode.value)
-
-    prefersDark.addEventListener('change', (mediaQuery) => {
-      darkMode.value = mediaQuery.matches
-      document.body.classList.toggle('dark', darkMode.value)
-    })
-  }
-
-    
+    initThemeDetection();
     await checkVersion();
   
   } catch (error) {

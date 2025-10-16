@@ -21,32 +21,14 @@
         </div>
       </div>
 
-      <IonList lines="full" class="settings-list">
-        <IonList-header>
-          <ion-label>Appearance</ion-label>
-        </IonList-header>
-        
-        <ion-item lines="none">
-          <IonIcon slot="start" :icon="moonOutline" color="medium" />
-          <IonLabel>Dark Mode</IonLabel>
-          <ion-toggle
-            slot="end"
-            v-model="darkMode"
-            @ionChange="toggleDarkTheme($event.detail.checked)"
-          ></ion-toggle>
-        </ion-item>
 
-      </IonList>
-
-
-      <IonList lines="full" class="settings-list">
-        <IonList-header>
-          <ion-label>General</ion-label>  
-        </IonList-header>
+      <IonList lines="none" class="settings-list">
+        <!-- <IonListHeader>
+          <IonLabel>General</IonLabel>  
+        </IonListHeader> -->
 
         <IonItem
           button
-          :detail="true"
           @click="
             navigateToExternal('https://legal.klgilc.com/privacy-policy.html')
           "
@@ -57,7 +39,6 @@
 
         <IonItem
           button
-          :detail="true"
           @click="
             navigateToExternal('https://legal.klgilc.com/terms-of-service.html')
           "
@@ -68,7 +49,6 @@
 
         <IonItem
           button
-          :detail="true"
           @click="navigateToExternal('https://wa.me/+233208345390')"
         >
           <IonIcon slot="start" :icon="chatbubbleOutline" color="medium" />
@@ -77,7 +57,6 @@
 
         <IonItem
           button
-          :detail="true"
           @click="
             navigateToExternal('https://legal.klgilc.com/account-deletion.html')
           "
@@ -86,23 +65,23 @@
           <IonLabel>Delete Account</IonLabel>
         </IonItem>
 
-        <IonItem button :detail="true" @click="shareApp">
+        <IonItem button @click="shareApp">
           <IonIcon slot="start" :icon="shareOutline" color="medium" />
           <IonLabel>Share App</IonLabel>
         </IonItem>
 
-        <IonItem button id="about-alert" :detail="true">
+        <IonItem button id="about-alert">
           <IonIcon slot="start" :icon="informationCircleOutline" color="medium" />
           <IonLabel>About</IonLabel>
         </IonItem>
 
-        <ion-alert
+        <IonAlert
           trigger="about-alert"
           header="Klegg"
           sub-header="Version 1.0.1"
           message="Ⓒ 2025 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
-        ></ion-alert>
+        ></IonAlert>
       </IonList>
 
       <div class="logout-section">
@@ -123,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { Share } from "@capacitor/share";
@@ -140,10 +119,8 @@ import {
   IonIcon,
   IonButton,
   IonLoading,
-  IonToggle,
-  IonListHeader
 } from "@ionic/vue";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { updateStatusBar } from '@/utils/statusBar';
 import { Toast } from "@capacitor/toast";
 import {
   lockClosedOutline,
@@ -153,12 +130,13 @@ import {
   shareOutline,
   informationCircleOutline,
   logOutOutline,
-  moonOutline
+  moonOutline,
+  moon,
+  colorPaletteOutline
 } from "ionicons/icons";
-import { refreshOutline } from 'ionicons/icons';
 
 const router = useRouter();
-const defaultAvatar = "https://www.gravatar.com/avatar/?d=mp"; // Default profile pic
+const defaultAvatar = "https://www.gravatar.com/avatar/?d=mp";
 const user = ref<{
   name: string;
   id: number;
@@ -173,17 +151,26 @@ const token = localStorage.getItem("parisklegg_token") || "";
 let global_user_id: number | null = null;
 
 
+// Handle system theme changes
+const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
+  const isDark = mediaQuery.matches;
+  // Update status bar automatically using our utility
+  updateStatusBar(isDark);
+};
 
-const darkMode = ref(false)
 
-const toggleDarkTheme = (shouldEnable:any) => {
-  document.body.classList.toggle('dark', shouldEnable)
-  localStorage.setItem('darkMode', shouldEnable)
-}
+// Initialize theme detection
+const initThemeDetection = () => {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Set initial status bar based on current system theme
+  handleSystemThemeChange(prefersDark);
+  // Listen for system theme changes
+  prefersDark.addEventListener('change', handleSystemThemeChange);
+  return prefersDark;
+};
 
 onMounted(async () => {
-  // Load saved preference
-  const saved = localStorage.getItem('darkMode')
+  initThemeDetection();
   const userData = localStorage.getItem("parisklegg_user");
   if (userData) {
     const parsedUserData = JSON.parse(userData);
@@ -194,32 +181,10 @@ onMounted(async () => {
       user.value.image = parsedUserData.profile_photo_path || defaultAvatar;
       global_user_id = parsedUserData.user_id;
     }
-    console.log("User data:", parsedUserData.user_id);
   }
-
-
-  if (saved !== null) {
-    darkMode.value = saved === 'true'
-    document.body.classList.toggle('dark', darkMode.value)
-  } else {
-    // Fall back to system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-    darkMode.value = prefersDark.matches
-    document.body.classList.toggle('dark', darkMode.value)
-
-    prefersDark.addEventListener('change', (mediaQuery) => {
-      darkMode.value = mediaQuery.matches
-      document.body.classList.toggle('dark', darkMode.value)
-    })
-  }
-
-
 
 });
 
-StatusBar.setOverlaysWebView({ overlay: false });
-StatusBar.setBackgroundColor({ color: "#ffffff" });
-StatusBar.setStyle({ style: Style.Light });
 
 const shareApp = async () => {
   await Share.share({
@@ -294,6 +259,8 @@ const handleFetchError = (error: unknown) => {
     position: "top",
   });
 };
+
+
 </script>
 
 <style scoped>
@@ -302,10 +269,12 @@ const handleFetchError = (error: unknown) => {
   display: flex;
   align-items: center;
   padding: 20px;
-  background: #fff;
-  border-radius: 10px;
+  background: var(--ion-card-background, var(--ion-item-background));
+  border-radius: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.08));
+  transition: all 0.3s ease;
 }
 
 .profile-img {
@@ -314,20 +283,23 @@ const handleFetchError = (error: unknown) => {
   border-radius: 50%;
   margin-right: 16px;
   object-fit: cover;
-  border: 2px solid #f4f4f4;
+  border: 2px solid var(--ion-color-light-shade);
+  transition: border-color 0.3s ease;
 }
 
 .profile-info h2 {
   font-size: 1.1rem;
   margin: 0 0 4px 0;
   font-weight: 600;
-  color: #333;
+  color: var(--ion-text-color);
+  transition: color 0.3s ease;
 }
 
 .profile-info p {
-  color: #666;
+  color: var(--ion-color-medium);
   margin: 0 0 4px 0;
   font-size: 0.9rem;
+  transition: color 0.3s ease;
 }
 
 .settings-list {
@@ -339,23 +311,89 @@ const handleFetchError = (error: unknown) => {
   --padding-start: 12px;
   --padding-end: 12px;
   --min-height: 56px;
-  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color: var(--ion-border-color);
+  --background: var(--ion-item-background);
+  --background-hover: var(--ion-color-step-50);
+  --background-activated: var(--ion-color-step-100);
+  transition: all 0.3s ease;
+}
+
+.settings-list ion-item:hover {
+  --background: var(--ion-color-step-50);
 }
 
 .logout-section {
   display: flex;
   justify-content: center;
   margin-top: 8px;
+  padding: 16px 0;
 }
 
 .logout-button {
-  --padding-start: 12px;
-  --padding-end: 12px;
-  --background-activated: rgba(244, 67, 54, 0.1);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --background-activated: var(--ion-color-danger-tint);
   font-weight: 500;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 .logout-button:hover {
-  color: var(--ion-color-danger);
+  --background: var(--ion-color-danger-tint);
+  border-color: var(--ion-color-danger);
 }
+
+.theme-select {
+  min-width: 120px;
+}
+
+/* Dark mode support using Ionic's CSS variables */
+@media (prefers-color-scheme: dark) {
+  .profile-section {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-color: var(--ion-color-step-300, #333);
+  }
+
+  .profile-img {
+    border-color: var(--ion-color-step-400, #444);
+  }
+}
+
+/* Alternative: If you want to manually handle dark mode with a class */
+:global(ion-content.dark) .profile-section {
+  background: var(--ion-color-step-50, #1a1a1a);
+  border-color: var(--ion-color-step-200, #333);
+}
+
+:global(ion-content.dark) .profile-info h2 {
+  color: var(--ion-text-color, #ffffff);
+}
+
+:global(ion-content.dark) .profile-info p {
+  color: var(--ion-color-step-600, #888);
+}
+
+/* Ensure smooth transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* 🎯 iOS-only dark mode fix for Quick Actions text touching edges */
+@supports (-webkit-touch-callout: none) {
+  .dark .quick-action-button {
+    --padding-top: 14px;
+    --padding-bottom: 14px;
+    --padding-start: 6px;
+    --padding-end: 6px;
+    border: 1px solid var(--ion-color-step-250);
+  }
+
+  .dark .quick-action-button ion-label {
+    padding: 0 4px;
+    margin-top: 6px;
+  }
+}
+
+
 </style>
