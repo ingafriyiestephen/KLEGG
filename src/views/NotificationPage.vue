@@ -132,7 +132,6 @@
                   <span class="vote-count">{{ comment.downvotes_count }}</span>
                 </ion-button>
               </div>
-
               <ion-button
                 v-if="comment.user_id === currentUserId"
                 fill="clear"
@@ -272,6 +271,16 @@ const token = localStorage.getItem("parisklegg_token") || "";
 // Get the stored user data
 const userDataString = localStorage.getItem("parisklegg_user"); // or whatever your key is
 const userData = userDataString ? JSON.parse(userDataString) : null;
+let global_user_id: number | null = null;
+
+const user = ref<{
+  name: string;
+  id: number;
+  otp: number;
+  phone: string;
+  image?: string;
+  email?: string;
+}>({ name: "", id: 0, otp: 0, phone: "" });
 
 interface Notification {
   id: number;
@@ -656,10 +665,24 @@ const initThemeDetection = () => {
 onMounted(() => {
   initThemeDetection();
   loadNotification();
+
+  const userData = localStorage.getItem("parisklegg_user");
+  if (userData) {
+    const parsedUserData = JSON.parse(userData);
+    if (parsedUserData) {
+      user.value.name = parsedUserData.fullname;
+      user.value.id = parsedUserData.user_id;
+      user.value.email = parsedUserData.username;
+      global_user_id = parsedUserData.user_id;
+    }
+  }
+
   // Set current user ID from your auth system
-  currentUserId.value = localStorage.getItem("global_id")
-    ? Number(localStorage.getItem("global_id"))
+  currentUserId.value = global_user_id
+    ? Number(global_user_id)
     : 0;
+
+
 });
 
 onIonViewWillEnter(async () => {

@@ -72,7 +72,7 @@
             <div class="join-section" v-if="day.isToday">
               <ion-button 
                 class="join-button"
-                :disabled="!day.canJoin && !day.classEnded"
+                :disabled="!day.canJoin || !day.meetingLink"
                 :fill="getButtonFill(day)"
                 :color="getButtonColor(day)"
                 @click="joinClass(day)"
@@ -81,6 +81,13 @@
                 <ion-icon slot="start" :icon="getButtonIcon(day)"></ion-icon>
                 {{ getButtonText(day) }}
               </ion-button>
+              
+              <!-- No meeting link message -->
+              <div class="no-link-message" v-if="!day.meetingLink && day.canJoin">
+                <ion-text color="danger">
+                  <small>Meeting link not available</small>
+                </ion-text>
+              </div>
               
               <!-- Countdown Timer -->
               <div class="countdown" v-if="day.countdown && !day.canJoin && !day.classInProgress">
@@ -96,7 +103,7 @@
                 </ion-text>
               </div>
             </div>
-            
+
             <!-- Not Today Message -->
             <div class="not-today-message" v-else>
               <ion-text color="medium">
@@ -163,9 +170,16 @@ interface TimetableEntry {
   saturday_end: string;
   sunday_start: string;
   sunday_end: string;
+  // Add meeting link fields
+  monday_meeting_link?: string | null;
+  tuesday_meeting_link?: string | null;
+  wednesday_meeting_link?: string | null;
+  thursday_meeting_link?: string | null;
+  friday_meeting_link?: string | null;
+  saturday_meeting_link?: string | null;
+  sunday_meeting_link?: string | null;
 }
 
-// Replace the DaySchedule interface
 interface DaySchedule {
   name: string;
   dayKey: string;
@@ -180,6 +194,7 @@ interface DaySchedule {
   statusColor?: string;
   startDateTime?: Date;
   endDateTime?: Date;
+  meetingLink?: string | null; // Add meeting link to day schedule
 }
 
 const token = localStorage.getItem("parisklegg_token") || "";
@@ -218,9 +233,9 @@ const getWeekDates = (): string => {
 
 // Add these new helper functions
 const getButtonText = (day: DaySchedule): string => {
-  if (day.classEnded) return 'Join Ended';
-  if (day.classInProgress) return 'Join Now';
-  if (day.canJoin) return 'Join Soon';
+  if (day.classEnded) return 'Class Ended';
+  if (day.classInProgress) return day.meetingLink ? 'Join Now' : 'No Link';
+  if (day.canJoin) return day.meetingLink ? 'Join Soon' : 'No Link';
   return 'Join Soon';
 };
 
@@ -401,20 +416,23 @@ const processTimetableData = (data: TimetableEntry[]) => {
           const startDateTime = parseClassTime(startTime);
           const endDateTime = parseClassTime(endTime);
           const isToday = day.dayKey === todayKey;
+          const meetingLink = entry[
+            `${day.dayKey}_meeting_link` as keyof TimetableEntry
+          ] as string | null;
           
-        // In processTimetableData, update the daySchedule object creation:
-        const daySchedule: DaySchedule = {
-          name: day.name,
-          dayKey: day.dayKey,
-          startTime,
-          endTime,
-          isToday,
-          canJoin: false,
-          classInProgress: false,
-          classEnded: false,
-          startDateTime,
-          endDateTime
-        };
+          const daySchedule: DaySchedule = {
+            name: day.name,
+            dayKey: day.dayKey,
+            startTime,
+            endTime,
+            isToday,
+            canJoin: false,
+            classInProgress: false,
+            classEnded: false,
+            startDateTime,
+            endDateTime,
+            meetingLink: meetingLink // Add meeting link
+          };
 
           // Initialize join status
           if (isToday) {
@@ -482,28 +500,46 @@ const startCountdownTimer = () => {
   }, 60000);
 };
 
-const joinClass = (day: DaySchedule) => {
-  if (!day.canJoin) return;
+const joinClass = async (day: DaySchedule) => {
+  if (!day.canJoin || !day.meetingLink) {
+    if (!day.meetingLink) {
+      Toast.show({
+        text: 'Meeting link not available for this class',
+        position: 'top',
+        duration: 'short'
+      });
+    }
+    return;
+  }
 
-  // Here you would implement the actual join logic
-  // For now, we'll show a success message
-  Toast.show({
-    text: `Joining ${tutorshipName.value} class...`,
-    position: 'top',
-    duration: 'short'
-  });
-
-  // Simulate joining process
-  setTimeout(() => {
+  try {
     Toast.show({
-      text: `Successfully joined ${tutorshipName.value} class!`,
+      text: `Opening ${tutorshipName.value} class...`,
       position: 'top',
       duration: 'short'
     });
-    
-    // You would typically navigate to the video call page here
-    // router.push('/video-call');
-  }, 1000);
+
+    // Check if it's a Zoom link
+    if (day.meetingLink.includes('zoom.us')) {
+      // For better Zoom experience on mobile
+      const zoomUrl = day.meetingLink.replace('/j/', '/join/');
+      window.open(zoomUrl, '_system');
+    } else if (day.meetingLink.includes('meet.google.com')) {
+      // For Google Meet
+      window.open(day.meetingLink, '_system');
+    } else {
+      // For other meeting links
+      window.open(day.meetingLink, '_blank');
+    }
+
+  } catch (error) {
+    console.error('Error joining class:', error);
+    Toast.show({
+      text: 'Failed to open meeting link',
+      position: 'top',
+      duration: 'short'
+    });
+  }
 };
 
 const getAuthHeaders = () => ({
@@ -833,5 +869,15 @@ onUnmounted(() => {
 
 .day-card:nth-child(even) {
   animation-delay: 0.2s;
+}
+
+.no-link-message {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.no-link-message ion-text {
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 </style>
