@@ -1,13 +1,9 @@
 <template>
   <ion-page class="modern-school-theme">
-    <!-- Header with school-themed gradient -->
-    <ion-header class="header-gradient">
+    <!-- Simple header without gradient -->
+    <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button
-            default-href="/home"
-            class="back-button"
-          ></ion-back-button>
         </ion-buttons>
         <ion-title class="page-title">My Classes</ion-title>
         <ion-buttons slot="end">
@@ -335,36 +331,33 @@ onMounted(() => {
   --default-color: #8395a7;
 }
 
-/* Floating Header */
-.floating-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: var(--ion-card-background);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  z-index: 10;
-  border-bottom: 1px solid var(--ion-border-color);
+/* Simple header styling - white in light mode, dark in dark mode */
+ion-header {
+  background: var(--ion-toolbar-background);
 }
 
-.header-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--ion-text-color);
-  margin: 0;
-}
-
-.back-btn {
+ion-toolbar {
+  --background: var(--ion-toolbar-background);
   --color: var(--ion-text-color);
-  --icon-font-size: 1.4rem;
+  --border-color: var(--ion-border-color);
+}
+
+.back-button {
+  --color: var(--ion-text-color);
 }
 
 .refresh-btn {
   --color: var(--ion-text-color);
+}
+
+.page-title {
+  color: var(--ion-text-color);
+  font-weight: 600;
+}
+
+/* Ensure content background follows theme */
+.content-bg {
+  --background: var(--ion-background-color);
 }
 
 /* Loading State */
@@ -388,16 +381,6 @@ onMounted(() => {
 .loading-container p {
   color: var(--ion-color-medium);
   margin-top: 8px;
-}
-
-@keyframes pageFlip {
-  0%,
-  100% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(-20deg);
-  }
 }
 
 /* Empty State */
@@ -424,7 +407,7 @@ onMounted(() => {
   bottom: 0;
   width: 180px;
   height: 10px;
-  background: #a55c40; /* Kept as fixed color for consistency */
+  background: #a55c40;
   border-radius: 4px;
 }
 
@@ -520,9 +503,7 @@ onMounted(() => {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   border: 1px solid var(--ion-border-color);
 }
@@ -636,47 +617,40 @@ ion-icon {
   font-size: 1.2rem;
 }
 
-/* Card Container */
-.class-card {
-  position: relative;
-  background: var(--ion-card-background);
+/* Quick Rating Action */
+.quick-action {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(var(--ion-color-warning-rgb), 0.1);
+  color: var(--ion-color-warning);
+  padding: 6px 10px;
   border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid var(--ion-border-color);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
 }
 
-.class-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* Action Ribbon Container - FIXED */
+/* Action Ribbon Container */
 .action-ribbon.two-row {
   height: 0;
   overflow: hidden;
   transition: height 0.3s ease;
   background: var(--ion-color-step-50);
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .action-ribbon.two-row.active {
-  height: 120px; /* Enough height for two rows */
+  height: 120px;
   padding: 8px 0;
-  opacity: 1;
 }
 
 .ribbon-row {
   display: flex;
   justify-content: space-around;
   width: 100%;
-  flex: 1;
 }
 
 .ribbon-button {
@@ -684,7 +658,6 @@ ion-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 6px 4px;
   margin: 0 4px;
   min-width: 0;
@@ -716,136 +689,6 @@ ion-icon {
   color: var(--ion-color-medium);
 }
 
-/* Quick Rating Action */
-.quick-action {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(var(--ion-color-warning-rgb), 0.1);
-  color: var(--ion-color-warning);
-  padding: 6px 10px;
-  border-radius: 16px;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 2;
-}
-
-/* Progress Bar */
-.progress-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.progress-bar {
-  flex-grow: 1;
-  height: 6px;
-  background: rgba(var(--ion-color-primary-rgb), 0.1);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--ion-color-primary);
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-
-/* Subject Badges */
-.subject-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  color: white;
-}
-
-.math-badge {
-  background: linear-gradient(135deg, var(--math-color), #ff8e8e);
-}
-.science-badge {
-  background: linear-gradient(135deg, var(--science-color), #88f3ed);
-}
-.english-badge {
-  background: linear-gradient(135deg, var(--english-color), #fd79a8);
-}
-.history-badge {
-  background: linear-gradient(135deg, var(--history-color), #ff9f43);
-}
-
-/* Action Ribbon Container */
-.action-ribbon.two-row {
-  height: 0;
-  overflow: hidden;
-  transition: height 0.3s ease;
-  background: var(--ion-color-step-50);
-  border-radius: 8px;
-}
-
-.action-ribbon.two-row.active {
-  height: 120px;
-  padding: 8px 0;
-}
-
-.ribbon-row {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-}
-
-.ribbon-button {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 4px;
-  margin: 0 4px;
-  min-width: 0;
-}
-
-.ribbon-button ion-icon {
-  font-size: 1.2rem;
-  margin-bottom: 4px;
-  color: var(--ion-color-medium);
-}
-
-.ribbon-button span {
-  font-size: 0.7rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  color: var(--ion-color-medium);
-}
-
-/* Dark mode specific adjustments */
-.dark .class-card {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.dark .class-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.dark .floating-header {
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-}
-
-.dark .action-ribbon {
-  background: var(--ion-color-step-150);
-}
-
-.dark .action-ribbon.two-row {
-  background: var(--ion-color-step-150);
-}
-
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .class-grid {
@@ -853,52 +696,9 @@ ion-icon {
     padding: 16px;
     gap: 16px;
   }
-
-  .floating-header {
-    padding: 12px 15px;
-  }
   
   .class-card {
     padding: 16px;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .class-card {
-    border: 2px solid var(--ion-border-color);
-  }
-  
-  .action-ribbon {
-    border: 1px solid var(--ion-border-color);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .class-card {
-    transition: none;
-  }
-  
-  .class-card:hover {
-    transform: none;
-  }
-  
-  .action-ribbon {
-    transition: none;
-  }
-}
-
-/* Safe area insets */
-@supports(padding: max(0px)) {
-  .class-grid {
-    padding-left: max(20px, env(safe-area-inset-left));
-    padding-right: max(20px, env(safe-area-inset-right));
-  }
-  
-  .floating-header {
-    padding-left: max(20px, env(safe-area-inset-left));
-    padding-right: max(20px, env(safe-area-inset-right));
   }
 }
 
