@@ -90,7 +90,7 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- Quick Actions -->
+        <!-- Quick Actions - Redesigned -->
         <ion-card class="content-card">
           <ion-card-header>
             <ion-card-title>
@@ -99,40 +99,28 @@
             </ion-card-title>
           </ion-card-header>
 
-          <ion-card-content>
+          <ion-card-content class="quick-actions-container">
             <div class="quick-actions-grid">
-              <ion-button
-                fill="clear"
-                class="quick-action-button"
-                @click="goToClasses"
-              >
-                <div class="action-icon">
-                  <ion-icon :icon="calendarOutline"></ion-icon>
+              <div class="action-item" @click="goToClasses">
+                <div class="action-icon-wrapper">
+                  <ion-icon :icon="calendarOutline" class="action-icon"></ion-icon>
                 </div>
-                <ion-label>Classes</ion-label>
-              </ion-button>
+                <ion-text class="action-label">Classes</ion-text>
+              </div>
 
-              <ion-button
-                fill="clear"
-                class="quick-action-button"
-                @click="goToNotifications"
-              >
-                <div class="action-icon">
-                  <ion-icon :icon="notificationsOutline"></ion-icon>
+              <div class="action-item" @click="goToNotifications">
+                <div class="action-icon-wrapper">
+                  <ion-icon :icon="notificationsOutline" class="action-icon"></ion-icon>
                 </div>
-                <ion-label>Notifications</ion-label>
-              </ion-button>
+                <ion-text class="action-label">Notifications</ion-text>
+              </div>
 
-              <ion-button
-                fill="clear"
-                class="quick-action-button"
-                @click="goToSettings"
-              >
-                <div class="action-icon">
-                  <ion-icon :icon="settingsOutline"></ion-icon>
+              <div class="action-item" @click="goToSettings">
+                <div class="action-icon-wrapper">
+                  <ion-icon :icon="settingsOutline" class="action-icon"></ion-icon>
                 </div>
-                <ion-label>Settings</ion-label>
-              </ion-button>
+                <ion-text class="action-label">Settings</ion-text>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>
@@ -176,6 +164,7 @@ import {
 } from "ionicons/icons";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import axios from "axios";
+import { isPlatform } from '@ionic/vue';
 import { useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
 import { updateStatusBar } from '@/utils/statusBar';
@@ -230,6 +219,18 @@ const latestAttendance = computed(() => {
 const userAvatar = computed(() => {
   return "/assets/img/login-logo.png";
 });
+
+// Add platform class to body for CSS targeting
+const detectPlatform = () => {
+  const body = document.body;
+  body.classList.remove('ios', 'android');
+  
+  if (isPlatform('ios')) {
+    body.classList.add('ios');
+  } else if (isPlatform('android')) {
+    body.classList.add('android');
+  }
+};
 
 // Format date for display
 const formatDate = (dateString: string) => {
@@ -348,6 +349,7 @@ const initThemeDetection = () => {
 // Initialize data
 onMounted(async () => {
   try {
+    detectPlatform();
     initThemeDetection();
     await fetchData();
   } catch (error) {
@@ -502,53 +504,192 @@ ion-note {
   --background: var(--ion-color-light-shade);
 }
 
-/* Quick Actions Grid */
+/* Quick Actions - Fixed Icon Visibility */
+.quick-actions-container {
+  padding: 8px 4px !important;
+}
+
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  padding: 8px 0;
+  width: 100%;
 }
 
-.quick-action-button {
-  --padding-start: 0;
-  --padding-end: 0;
-  --padding-top: 12px;
-  --padding-bottom: 12px;
-  --background: var(--ion-item-background);
-  --border-radius: 12px;
-  height: 100%;
-  margin: 0;
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  border-radius: 16px;
+  background: var(--ion-item-background);
   border: 1px solid var(--ion-border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 90px;
+  justify-content: center;
+  position: relative;
 }
 
-.quick-action-button .action-icon {
+.action-item:active {
+  background: var(--ion-color-light-shade);
+  transform: scale(0.98);
+}
+
+.action-icon-wrapper {
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ion-color-step-100);
   border-radius: 50%;
-  margin: 0 auto 8px;
-  transition: background-color 0.2s ease;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  /* Fixed background for better visibility */
+  background: var(--ion-color-primary);
 }
 
-.quick-action-button:hover .action-icon {
-  background: var(--ion-color-step-200);
+.action-icon {
+  font-size: 20px;
+  color: white !important; /* Force white icons for better contrast */
 }
 
-.quick-action-button ion-icon {
-  font-size: 24px;
-  color: var(--ion-color-primary);
-}
-
-.quick-action-button ion-label {
+.action-label {
   font-size: 12px;
   font-weight: 500;
+  text-align: center;
   color: var(--ion-text-color);
-  white-space: normal;
-  margin-top: 4px;
+  line-height: 1.3;
+  padding: 0 2px;
+}
+
+/* Dark Mode Optimizations */
+@media (prefers-color-scheme: dark) {
+  .action-item {
+    background: var(--ion-color-step-150);
+    border-color: var(--ion-border-color);
+  }
+  
+  .action-icon-wrapper {
+    background: var(--ion-color-primary); /* Keep primary color in dark mode too */
+  }
+  
+  .action-item:active {
+    background: var(--ion-color-step-200);
+  }
+}
+
+
+
+/* Platform Specific Adjustments */
+.ios .action-item {
+  border-radius: 18px;
+  min-height: 92px;
+}
+
+.android .action-item {
+  border-radius: 12px;
+  min-height: 88px;
+}
+
+.ios .action-label {
+  font-weight: 600;
+}
+
+.android .action-label {
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 360px) {
+  .quick-actions-grid {
+    gap: 8px;
+  }
+  
+  .action-item {
+    padding: 12px 6px;
+    min-height: 80px;
+  }
+  
+  .action-icon-wrapper {
+    width: 42px;
+    height: 42px;
+  }
+  
+  .action-icon {
+    font-size: 18px;
+  }
+  
+  .action-label {
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 410px) {
+  .quick-actions-grid {
+    gap: 16px;
+  }
+  
+  .action-item {
+    padding: 20px 12px;
+    min-height: 100px;
+  }
+}
+
+@media (min-width: 768px) {
+  .quick-actions-container {
+    padding: 16px 8px !important;
+  }
+  
+  .quick-actions-grid {
+    gap: 24px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .action-item {
+    padding: 24px 16px;
+    min-height: 110px;
+  }
+  
+  .action-icon-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .action-icon {
+    font-size: 24px;
+  }
+  
+  .action-label {
+    font-size: 13px;
+  }
+}
+
+/* Focus states for accessibility */
+.action-item:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Safe area support for notched devices */
+@supports(padding: max(0px)) {
+  .quick-actions-container {
+    padding-left: max(8px, env(safe-area-inset-left)) !important;
+    padding-right: max(8px, env(safe-area-inset-right)) !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .action-item,
+  .action-icon-wrapper {
+    transition: none;
+  }
+  
+  .action-item:active {
+    transform: none;
+  }
 }
 
 /* Bottom Tabs */

@@ -78,7 +78,7 @@
         <IonAlert
           trigger="about-alert"
           header="Klegg"
-          sub-header="Version 1.0.1"
+          sub-header="Version 1.0.8"
           message="Ⓒ 2025 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
         ></IonAlert>
