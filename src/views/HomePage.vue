@@ -43,7 +43,7 @@
           <ion-card-content>
             <div v-if="latestNotification" class="notification-content">
               <p>
-                {{ truncateText(latestNotification.notification_body, 100) }}
+                {{ truncateText(latestNotification.body, 100) }} <!-- Changed from notification_body to body -->
               </p>
               <ion-note>{{
                 formatDate(latestNotification.created_at)
@@ -61,7 +61,7 @@
               @click="goToNotifications"
               class="view-all-button"
             >
-              View All Notifications
+              View All Notifications ({{ notifications.length }})
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -80,13 +80,22 @@
               <p>
                 You were marked
                 <strong>{{ latestAttendance.student_attendance }}</strong>
+                in <strong>{{ latestAttendance.tutorship_name }}</strong>
               </p>
-              <ion-note>{{ formatDate(latestAttendance.created_at) }}</ion-note>
+              <ion-note>{{ 
+                formatDate(latestAttendance.attendance_date) || 
+                formatDate(latestAttendance.created_at) 
+              }}</ion-note>
             </div>
             <div v-else class="empty-state">
               <ion-icon :icon="timeOutline"></ion-icon>
               <p>No attendance records yet</p>
             </div>
+            
+            <!-- Show attendance count for debugging -->
+            <!-- <ion-note v-if="attendances.length > 0" style="font-size: 12px; display: block; text-align: center; margin-top: 8px;">
+              {{ attendances.length }} attendance records found
+            </ion-note> -->
           </ion-card-content>
         </ion-card>
 
@@ -172,15 +181,35 @@ import { updateStatusBar } from '@/utils/statusBar';
 
 interface Notification {
   id: number;
-  notification_title: string;
-  notification_body: string;
+  title: string; // Changed from notification_title
+  body: string; // Changed from notification_body
+  is_read: boolean;
   created_at: string;
+  user: any;
+  comments_count: number;
+  reaction_counts: any[];
+  user_reaction: any;
+}
+
+interface ApiResponse {
+  current_page: number;
+  data: Notification[];
+  // ... other pagination properties
 }
 
 interface Attendance {
-  id: number;
-  student_attendance: string;
+  attendance_id: number; // Changed from id
+  tutorship_id: number;
+  attendance_code: string;
+  attendance_group: string;
+  tutorship_name: string;
+  user_id: number;
+  student_name: string;
+  student_attendance: string; // This is correct!
+  teacher_name: string;
+  attendance_date: string;
   created_at: string;
+  updated_at: string;
 }
 
 const token = localStorage.getItem("parisklegg_token") || "";
@@ -210,9 +239,36 @@ const latestNotification = computed(() => {
   return notifications.value.length > 0 ? notifications.value[0] : null;
 });
 
-// Get latest attendance
+// Get latest attendance - sort by date to get the most recent
 const latestAttendance = computed(() => {
-  return attendances.value.length > 0 ? attendances.value[0] : null;
+  if (attendances.value.length > 0) {
+    // Sort by created_at or attendance_date to get the most recent
+    const sorted = [...attendances.value].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const latest = sorted[0];
+    console.log('Latest attendance:', latest);
+    return latest;
+  }
+  console.log('No attendances available');
+  return null;
+});
+
+
+// Safe attendance access
+const getLatestAttendance = computed(() => {
+  try {
+    if (attendances.value && attendances.value.length > 0) {
+      const sorted = [...attendances.value].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return sorted[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('Error processing attendance data:', error);
+    return null;
+  }
 });
 
 // Default avatar (can be replaced with actual user avatar)
@@ -234,6 +290,8 @@ const detectPlatform = () => {
 
 // Format date for display
 const formatDate = (dateString: string) => {
+  if (!dateString) return "Recently";
+  
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -242,7 +300,12 @@ const formatDate = (dateString: string) => {
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString();
+  
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    year: 'numeric'
+  });
 };
 
 // Truncate text with ellipsis
@@ -270,6 +333,7 @@ const refreshData = async () => {
   }
 };
 
+
 // Fetch data from API
 const fetchData = async () => {
   try {
@@ -282,8 +346,15 @@ const fetchData = async () => {
       }),
     ]);
 
-    notifications.value = notificationsRes.data;
-    attendances.value = attendancesRes.data;
+    // Notifications: paginated response (access .data.data)
+    notifications.value = notificationsRes.data.data || [];
+    
+    // Attendances: direct array response (access .data directly)
+    attendances.value = attendancesRes.data || [];
+
+    console.log('Notifications loaded:', notifications.value);
+    console.log('Attendances loaded:', attendances.value);
+
   } catch (error: any) {
     handleFetchError(error);
   }

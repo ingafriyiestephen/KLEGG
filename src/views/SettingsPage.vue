@@ -78,7 +78,7 @@
         <IonAlert
           trigger="about-alert"
           header="Klegg"
-          sub-header="Version 1.0.8"
+          sub-header="Version 1.0.1"
           message="Ⓒ 2025 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
         ></IonAlert>
@@ -186,11 +186,22 @@ onMounted(async () => {
 });
 
 
+// const shareApp = async () => {
+//   await Share.share({
+//     title: "Download Klegg.",
+//     text: "Get the Klegg app on the Google Play Store.",
+//     url: "https://play.google.com/store/apps/details?id=com.webmucho.klegg",
+//     dialogTitle:
+//       "Available to learners at the Klegg Institute of Language and Communication",
+//   });
+// };
+
+
 const shareApp = async () => {
   await Share.share({
     title: "Download Klegg.",
-    text: "Get the Klegg app on the Google Play Store.",
-    url: "https://play.google.com/store/apps/details?id=com.webmucho.klegg",
+    text: "Get the Klegg app on the App Store.",
+    url: "https://apps.apple.com/gh/app/klegg/id6753220908",
     dialogTitle:
       "Available to learners at the Klegg Institute of Language and Communication",
   });
