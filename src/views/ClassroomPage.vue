@@ -50,12 +50,20 @@
           class="day-card"
           :class="{ 'today-card': day.isToday }"
         >
-          <ion-card-header>
-            <ion-card-title class="day-title">
-              {{ day.name }}
-              <ion-badge color="success" v-if="day.isToday">Today</ion-badge>
-            </ion-card-title>
-          </ion-card-header>
+        <!-- In your ion-card-header section -->
+        <ion-card-header>
+          <ion-card-title class="day-title">
+            {{ day.name }}
+            <ion-badge color="success" v-if="day.isToday">Today</ion-badge>
+          </ion-card-title>
+          <!-- Add course name here -->
+          <ion-card-subtitle 
+            class="course-name" 
+            v-if="day.courseName && day.courseName !== '-'"
+          >
+            {{ day.courseName }}
+          </ion-card-subtitle>
+        </ion-card-header>
 
           <ion-card-content class="time-content">
             <ion-item lines="none">
@@ -156,18 +164,25 @@ import axios from "axios";
 interface TimetableEntry {
   tutorship_id: number;
   tutorship_name?: string;
+  monday_course: string; // Add this
   monday_start: string;
   monday_end: string;
+  tuesday_course: string; // Add this
   tuesday_start: string;
   tuesday_end: string;
+  wednesday_course: string; // Add this
   wednesday_start: string;
   wednesday_end: string;
+  thursday_course: string; // Add this
   thursday_start: string;
   thursday_end: string;
+  friday_course: string; // Add this
   friday_start: string;
   friday_end: string;
+  saturday_course: string; // Add this
   saturday_start: string;
   saturday_end: string;
+  sunday_course: string; // Add this
   sunday_start: string;
   sunday_end: string;
   // Add meeting link fields
@@ -183,6 +198,7 @@ interface TimetableEntry {
 interface DaySchedule {
   name: string;
   dayKey: string;
+  courseName: string; // Add this line
   startTime: string;
   endTime: string;
   isToday: boolean;
@@ -194,7 +210,7 @@ interface DaySchedule {
   statusColor?: string;
   startDateTime?: Date;
   endDateTime?: Date;
-  meetingLink?: string | null; // Add meeting link to day schedule
+  meetingLink?: string | null;
 }
 
 const token = localStorage.getItem("parisklegg_token") || "";
@@ -409,6 +425,9 @@ const processTimetableData = (data: TimetableEntry[]) => {
         const endTime = entry[
           `${day.dayKey}_end` as keyof TimetableEntry
         ] as string;
+        const courseName = entry[
+          `${day.dayKey}_course` as keyof TimetableEntry
+        ] as string; // Get course name
 
         if (hasClassTime(startTime, endTime)) {
           hasClasses.value = true;
@@ -423,6 +442,7 @@ const processTimetableData = (data: TimetableEntry[]) => {
           const daySchedule: DaySchedule = {
             name: day.name,
             dayKey: day.dayKey,
+            courseName: courseName, // Add course name here
             startTime,
             endTime,
             isToday,
@@ -431,7 +451,7 @@ const processTimetableData = (data: TimetableEntry[]) => {
             classEnded: false,
             startDateTime,
             endDateTime,
-            meetingLink: meetingLink // Add meeting link
+            meetingLink: meetingLink
           };
 
           // Initialize join status
@@ -879,5 +899,17 @@ onUnmounted(() => {
 .no-link-message ion-text {
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+.course-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ion-color-primary);
+  margin-top: 4px;
+}
+
+/* If you want to handle the case when there's no specific course name */
+.day-card-header:has(.course-name) {
+  padding-bottom: 12px;
 }
 </style>
