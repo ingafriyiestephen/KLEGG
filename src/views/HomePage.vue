@@ -350,10 +350,26 @@ const fetchData = async () => {
     notifications.value = notificationsRes.data.data || [];
     
     // Attendances: direct array response (access .data directly)
-    attendances.value = attendancesRes.data || [];
+    const allAttendances = attendancesRes.data || [];
+    
+    // Filter attendances to show only the current student's records
+    const currentUserId = userData?.user_id; // Make sure this matches your user data structure
+    console.log('Current user ID:', currentUserId);
+    console.log('All attendances before filtering:', allAttendances);
+    
+    if (currentUserId) {
+      attendances.value = allAttendances.filter((attendance: Attendance) => {
+        // Use the correct field that identifies the student
+        // This could be user_id, student_id, etc. - check your API response
+        const matches = attendance.user_id === currentUserId;
+        console.log(`Attendance ${attendance.attendance_id}: user_id=${attendance.user_id}, matches=${matches}`);
+        return matches;
+      });
+    } else {
+      attendances.value = [];
+    }
 
-    console.log('Notifications loaded:', notifications.value);
-    console.log('Attendances loaded:', attendances.value);
+    console.log('Filtered attendances for current user:', attendances.value);
 
   } catch (error: any) {
     handleFetchError(error);

@@ -119,10 +119,10 @@
                     v-if="assignment.assignment_file"
                     fill="clear"
                     size="small"
-                    @click="downloadFile(assignment.assignment_file)"
+                    @click="accessFile(assignment.assignment_file, isMobile ? 'view' : 'download')"
                   >
                     <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
-                    Download
+                    {{ isMobile ? 'Open' : 'Download' }}
                   </ion-button>
                 </div>
               </ion-label>
@@ -150,8 +150,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted} from "vue";
-import { onIonViewWillEnter } from "@ionic/vue";
+import { ref, onMounted, computed} from "vue";
+import { onIonViewWillEnter, isPlatform } from "@ionic/vue";
 import { useRoute, useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
 import axios from "axios";
@@ -241,6 +241,12 @@ const getStatus = (assignment: Assignment) => {
     return "open";
   }
 };
+
+
+const isMobile = computed(() => {
+  return isPlatform('ios') || isPlatform('android');
+});
+
 
 const getStatusColor = (assignment: Assignment): string => {
   const status = getStatus(assignment);
@@ -370,9 +376,36 @@ const fetchAssignments = async () => {
   }
 };
 
-const downloadFile = (filename: string) => {
-  window.open(`https://klegg-app-whh7m.ondigitalocean.app/files/${filename}`, "_blank");
+
+const accessFile = async (filename: string, action: 'view' | 'download' = 'view') => {
+  try {
+    const loadingToast = await Toast.show({
+      text: action === 'view' ? 'Opening file...' : 'Opening file for download...',
+      position: 'top'
+    });
+
+    // For both view and download, just open the file in a new tab
+    // Let the browser handle whether to show or download based on file type
+    const fileUrl = `https://school.klgilc.com/api/files/${filename}/view`;
+    window.open(fileUrl, '_blank');
+
+    await Toast.show({
+      text: 'File opened successfully',
+      position: 'top',
+      duration: 'short'
+    });
+
+  } catch (error) {
+    console.error('File access error:', error);
+    await Toast.show({
+      text: `Failed to open file. Please try again.`,
+      position: 'top',
+      duration: 'long'
+    });
+  }
 };
+
+
 
 const shareAssignment = (assignment: Assignment) => {
   // Implement share functionality

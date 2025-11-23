@@ -9,6 +9,7 @@
       </ion-toolbar>
     </ion-header>
 
+
     <ion-content :fullscreen="true">
       <!-- Loading State -->
       <div class="loading-container" v-if="loading">
@@ -37,6 +38,34 @@
 
           <ion-card-content>
             <p class="notification-body">{{ notification.body }}</p>
+
+            <!-- Single Image Attachment -->
+            <div v-if="notification.attachment && isImageFile(notification.attachment)" class="attachment-container">
+              <div class="image-attachment">
+                <img 
+                  :src="getFileUrl(notification.attachment)" 
+                  :alt="notification.attachment"
+                  loading="lazy"
+                  @click="viewFile(notification.attachment!)"
+                  class="attachment-image"
+                  @error="handleImageError"
+                />
+              </div>
+            </div>
+
+            <!-- Non-image Attachment -->
+            <div v-else-if="notification.attachment" class="file-attachment">
+              <ion-item button @click="downloadFile(notification.attachment!)">
+                <ion-icon :icon="documentOutline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <h3>{{ notification.attachment }}</h3>
+                  <p>File Attachment</p>
+                </ion-label>
+                <ion-button fill="clear" slot="end" @click.stop="downloadFile(notification.attachment!)">
+                  <ion-icon :icon="downloadOutline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </div>
 
             <!-- Reactions -->
             <div class="reactions-container">
@@ -78,9 +107,7 @@
         <div class="comments-section">
           <ion-list>
             <ion-list-header>
-              <ion-label
-                >Comments ({{ notification.comments_count }})</ion-label
-              >
+              <ion-label>Comments ({{ notification.comments_count }})</ion-label>
             </ion-list-header>
 
             <ion-item
@@ -215,6 +242,31 @@
           </ion-grid>
         </ion-content>
       </ion-popover>
+
+      <!-- Image Viewer Modal -->
+      <ion-modal 
+        :is-open="!!selectedImage" 
+        @didDismiss="selectedImage = null"
+        class="image-modal"
+      >
+        <ion-content>
+          <div class="modal-content" v-if="selectedImage">
+            <img 
+              :src="getFileUrl(selectedImage)" 
+              :alt="selectedImage"
+              class="modal-image"
+            />
+            <ion-button 
+              fill="clear" 
+              color="light" 
+              class="close-btn"
+              @click="selectedImage = null"
+            >
+              <ion-icon :icon="closeOutline"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -254,6 +306,7 @@ import {
   IonGrid,
   IonRow,
   IonCol,
+  IonModal,
 } from "@ionic/vue";
 import {
   warningOutline,
@@ -264,12 +317,15 @@ import {
   sendOutline,
   addOutline,
   trashOutline,
+  closeOutline,
+  documentOutline,
+  downloadOutline,
 } from "ionicons/icons";
 
 const token = localStorage.getItem("parisklegg_token") || "";
 
 // Get the stored user data
-const userDataString = localStorage.getItem("parisklegg_user"); // or whatever your key is
+const userDataString = localStorage.getItem("parisklegg_user");
 const userData = userDataString ? JSON.parse(userDataString) : null;
 let global_user_id: number | null = null;
 
@@ -291,6 +347,7 @@ interface Notification {
   reaction_counts: Record<string, number>;
   comments_count: number;
   user_reaction: { reaction_type: string } | null;
+  attachment: string | null;
 }
 
 interface Comment {
@@ -321,7 +378,8 @@ const newComment = ref("");
 const deletingCommentId = ref<number | null>(null);
 const showReactionPicker = ref(false);
 const reactionId = ref<number | null>(null);
-const currentUserId = ref(0); // You would set this from your auth system
+const currentUserId = ref(0);
+const selectedImage = ref<string | null>(null);
 
 const availableReactions = ["like", "heart", "thumbs-up"];
 
@@ -339,24 +397,101 @@ const getReactionIcon = (type: string) => {
 };
 
 const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return "Just now"; // Fallback if date is missing
+  if (!dateString) return "Just now";
 
-  // Remove microseconds and 'Z' if present
   const normalized = dateString.replace(/\.\d{6}Z$/, "");
-
-  // Parse the date
   const date = new Date(normalized);
   if (isNaN(date.getTime())) {
     return "Invalid date";
   }
 
-  // Format as "MMM DD, HH:mm" (e.g., "Aug 24, 18:37")
-  const month = date.toLocaleString("en-US", { month: "short" }); // "Aug"
-  const day = date.getDate(); // 24
-  const hours = String(date.getHours()).padStart(2, "0"); // "18"
-  const minutes = String(date.getMinutes()).padStart(2, "0"); // "37"
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const day = date.getDate();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
 
   return `${month} ${day}, ${hours}:${minutes}`;
+};
+
+// File handling methods
+const getFileUrl = (filename: string) => {
+  return `https://school.klgilc.com/api/files/${filename}/view`;
+};
+
+const isImageFile = (filename: string): boolean => {
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'];
+  return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+};
+
+const viewFile = (filename: string) => {
+  if (isImageFile(filename)) {
+    selectedImage.value = filename;
+  } else {
+    downloadFile(filename);
+  }
+};
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.style.opacity = '0.5';
+  img.alt = 'Failed to load image';
+};
+
+const downloadFile = async (filename: string) => {
+  try {
+    const loadingToast = await Toast.show({
+      text: 'Preparing download...',
+      position: 'top'
+    });
+
+    const response = await axios.get(
+      `https://school.klgilc.com/api/files/${filename}/download`,
+      {
+        headers: getAuthHeaders(),
+        responseType: 'blob',
+        timeout: 30000,
+      }
+    );
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Get filename from response headers or use the original filename
+    const contentDisposition = response.headers['content-disposition'];
+    let downloadFilename = filename;
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      if (filenameMatch) {
+        downloadFilename = filenameMatch[1];
+      }
+    }
+    
+    link.download = downloadFilename;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    await Toast.show({
+      text: 'Download started successfully',
+      position: 'top',
+      duration: 'short'
+    });
+
+  } catch (error) {
+    console.error('Download error:', error);
+    
+    await Toast.show({
+      text: 'Download failed. Please try again.',
+      position: 'top',
+      duration: 'long'
+    });
+  }
 };
 
 const loadNotification = async () => {
@@ -368,7 +503,7 @@ const loadNotification = async () => {
       `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}`,
       {
         headers: getAuthHeaders(),
-        timeout: 20000, // 20-second timeout
+        timeout: 20000,
       },
     );
     notification.value = response.data;
@@ -382,7 +517,7 @@ const loadNotification = async () => {
         {},
         {
           headers: getAuthHeaders(),
-          timeout: 10000, // 10-second timeout
+          timeout: 10000,
         },
       );
     }
@@ -405,7 +540,7 @@ const loadComments = async (page = 1) => {
       {
         params: { page },
         headers: getAuthHeaders(),
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       },
     );
 
@@ -437,15 +572,14 @@ const addComment = async () => {
       { comment_body: newComment.value },
       {
         headers: getAuthHeaders(),
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       },
     );
 
-    // Ensure we're using the correct response structure
     const newCommentData: Comment = {
       id: response.data.comment.id,
       comment_body: response.data.comment.comment_body,
-      created_at: response.data.comment.created_at, // Make sure this exists
+      created_at: response.data.comment.created_at,
       user_id: response.data.comment.user_id,
       user_name: response.data.comment.user_name,
       avatar: response.data.comment.avatar || null,
@@ -472,7 +606,7 @@ const deleteComment = async (commentId: number) => {
   try {
     await axios.delete(`https://klegg-app-whh7m.ondigitalocean.app/api/comments/${commentId}`, {
       headers: getAuthHeaders(),
-      timeout: 10000, // 10-second timeout
+      timeout: 10000,
     });
 
     comments.value = comments.value.filter((c) => c.id !== commentId);
@@ -531,7 +665,7 @@ const voteComment = async (
       { vote_type: voteType },
       {
         headers: getAuthHeaders(),
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       },
     );
 
@@ -562,7 +696,7 @@ const addReaction = async (type: string) => {
       },
       {
         headers: getAuthHeaders(),
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       },
     );
 
@@ -586,7 +720,7 @@ const removeReaction = async () => {
       `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}/delete_reaction`,
       {
         headers: getAuthHeaders(),
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       },
     );
 
@@ -617,7 +751,7 @@ const handleFetchError = (error: unknown) => {
 
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 401) {
-      router.replace("/"); // More specific route
+      router.replace("/");
       Toast.show({
         text: "Session expired. Please login again",
         position: "top",
@@ -642,25 +776,19 @@ const handleFetchError = (error: unknown) => {
   });
 };
 
-
 // Handle system theme changes
 const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
   const isDark = mediaQuery.matches;
-  // Update status bar automatically using our utility
   updateStatusBar(isDark);
 };
-
 
 // Initialize theme detection
 const initThemeDetection = () => {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-  // Set initial status bar based on current system theme
   handleSystemThemeChange(prefersDark);
-  // Listen for system theme changes
   prefersDark.addEventListener('change', handleSystemThemeChange);
   return prefersDark;
 };
-
 
 onMounted(() => {
   initThemeDetection();
@@ -681,15 +809,11 @@ onMounted(() => {
   currentUserId.value = global_user_id
     ? Number(global_user_id)
     : 0;
-
-
 });
 
 onIonViewWillEnter(async () => {
   initThemeDetection();
 });
-
-
 </script>
 
 <style scoped>
@@ -750,6 +874,42 @@ onIonViewWillEnter(async () => {
   line-height: 1.5;
   color: var(--ion-text-color);
   white-space: pre-line;
+}
+
+/* Attachment Container */
+.attachment-container {
+  margin: 16px 0;
+}
+
+.image-attachment {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ion-color-light);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.image-attachment:hover {
+  transform: scale(1.02);
+}
+
+.attachment-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}
+
+.file-attachment {
+  margin: 16px 0;
+}
+
+.file-attachment ion-item {
+  --background: var(--ion-color-light);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin: 8px 0;
 }
 
 /* Reactions */
@@ -887,6 +1047,35 @@ ion-popover ion-content {
   font-weight: 500;
 }
 
+/* Image Modal */
+.image-modal {
+  --width: 100%;
+  --height: 100%;
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  --background: rgba(255, 255, 255, 0.2);
+}
+
 /* Ensure spinner and icons have consistent sizing */
 ion-icon {
   width: 16px;
@@ -894,47 +1083,8 @@ ion-icon {
   color: var(--ion-color-medium);
 }
 
-/* Status indicators */
-.status-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ion-color-success);
-  margin-right: 8px;
-}
-
-.status-indicator.offline {
-  background: var(--ion-color-medium);
-}
-
-/* Badge styling */
-.notification-badge {
-  --background: var(--ion-color-primary);
-  --color: var(--ion-color-primary-contrast);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-/* Empty state */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  height: 40vh;
-  padding: 20px;
-  color: var(--ion-color-medium);
-}
-
-.empty-state ion-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .comment-item {
     --padding-start: 8px;
     --padding-end: 8px;
@@ -943,6 +1093,10 @@ ion-icon {
   .vote-buttons {
     margin-right: 4px;
     padding: 2px;
+  }
+  
+  .attachment-image {
+    max-height: 300px;
   }
 }
 
