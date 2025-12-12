@@ -45,7 +45,6 @@
           :key="notification.id"
           @click="openNotification(notification.id)"
           class="notification-item"
-          :class="{ unread: !notification.is_read }"
         >
           <ion-avatar slot="start" class="notification-avatar">
             <img src="/assets/img/login-logo.png" alt="School Logo" />

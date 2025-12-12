@@ -1,4 +1,4 @@
-<template>
+Replace the loading image with a skeleton keep it simple and give me the code ton insert:  <template>
   <ion-page>
     <ion-header>
       <ion-toolbar>
@@ -8,7 +8,6 @@
         <ion-title> Notification </ion-title>
       </ion-toolbar>
     </ion-header>
-
 
     <ion-content :fullscreen="true">
       <!-- Loading State -->
@@ -39,30 +38,54 @@
           <ion-card-content>
             <p class="notification-body">{{ notification.body }}</p>
 
-            <!-- Single Image Attachment -->
-            <div v-if="notification.attachment && isImageFile(notification.attachment)" class="attachment-container">
-              <div class="image-attachment">
-                <img 
-                  :src="getFileUrl(notification.attachment)" 
-                  :alt="notification.attachment"
-                  loading="lazy"
-                  @click="viewFile(notification.attachment!)"
-                  class="attachment-image"
-                  @error="handleImageError"
-                />
-              </div>
+            <!-- Single Image Attachment with Skeleton + Click to Open -->
+            <div
+              v-if="notification.attachment && isImageFile(notification.attachment)"
+              class="attachment-container"
+            >
+
+              <!-- Skeleton Loader -->
+              <div v-if="attachmentLoading" class="image-skeleton"></div>
+
+              <!-- Actual Image -->
+              <img
+                v-show="!attachmentLoading"
+                :src="getFileUrl(notification.attachment)"
+                class="attachment-image"
+                @load="handleImageLoad"
+                @error="handleImageError"
+                @click="openImage(notification.attachment)" 
+              />
             </div>
 
-            <!-- Non-image Attachment -->
+
+
+            <!-- Non-image Attachment with Loading -->
             <div v-else-if="notification.attachment" class="file-attachment">
-              <ion-item button @click="downloadFile(notification.attachment!)">
-                <ion-icon :icon="documentOutline" slot="start" color="primary"></ion-icon>
+              <ion-item 
+                button 
+                @click="downloadFile(notification.attachment!)"
+                :disabled="attachmentLoading"
+              >
+                <!-- Loading state for file -->
+                <div v-if="attachmentLoading" class="file-loading" slot="start">
+                  <ion-spinner name="dots" color="primary"></ion-spinner>
+                </div>
+                <ion-icon v-else :icon="documentOutline" slot="start" color="primary"></ion-icon>
+                
                 <ion-label>
                   <h3>{{ notification.attachment }}</h3>
                   <p>File Attachment</p>
                 </ion-label>
-                <ion-button fill="clear" slot="end" @click.stop="downloadFile(notification.attachment!)">
-                  <ion-icon :icon="downloadOutline"></ion-icon>
+                
+                <ion-button 
+                  fill="clear" 
+                  slot="end" 
+                  @click.stop="downloadFile(notification.attachment!)"
+                  :disabled="attachmentLoading"
+                >
+                  <ion-spinner v-if="attachmentLoading" name="dots"></ion-spinner>
+                  <ion-icon v-else :icon="downloadOutline"></ion-icon>
                 </ion-button>
               </ion-item>
             </div>
@@ -251,10 +274,19 @@
       >
         <ion-content>
           <div class="modal-content" v-if="selectedImage">
+            <!-- Loading indicator for modal image -->
+            <div v-if="modalImageLoading" class="modal-loading">
+              <ion-spinner name="crescent" color="light"></ion-spinner>
+              <p>Loading image...</p>
+            </div>
+            
             <img 
+              v-show="!modalImageLoading"
               :src="getFileUrl(selectedImage)" 
               :alt="selectedImage"
               class="modal-image"
+              @load="handleModalImageLoad"
+              @error="handleModalImageError"
             />
             <ion-button 
               fill="clear" 
@@ -413,9 +445,33 @@ const formatDate = (dateString: string | undefined): string => {
   return `${month} ${day}, ${hours}:${minutes}`;
 };
 
+
+// Add new reactive variables for attachment loading
+const attachmentLoading = ref(false);
+const modalImageLoading = ref(false);
+
+// File handling methods with loading states
+const handleImageLoad = () => {
+  attachmentLoading.value = false;
+};
+
+const handleModalImageLoad = () => {
+  modalImageLoading.value = false;
+};
+
+const handleModalImageError = (event: Event) => {
+  modalImageLoading.value = false;
+  const img = event.target as HTMLImageElement;
+  img.style.opacity = '0.5';
+  img.alt = 'Failed to load image';
+};
+
+
+
+
 // File handling methods
 const getFileUrl = (filename: string) => {
-  return `https://school.klgilc.com/api/files/${filename}/view`;
+  return `https://storage.draugustinaosabutey.com/api/files/${filename}/view`;
 };
 
 const isImageFile = (filename: string): boolean => {
@@ -423,81 +479,56 @@ const isImageFile = (filename: string): boolean => {
   return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
 };
 
-const viewFile = (filename: string) => {
-  if (isImageFile(filename)) {
-    selectedImage.value = filename;
-  } else {
-    downloadFile(filename);
-  }
+// Update viewFile method to show loading for images
+const openImage = (filename: string) => {
+  selectedImage.value = filename;
+  modalImageLoading.value = true;
 };
 
+
+// Update the existing handleImageError method
 const handleImageError = (event: Event) => {
+  attachmentLoading.value = false;
   const img = event.target as HTMLImageElement;
   img.style.opacity = '0.5';
   img.alt = 'Failed to load image';
 };
 
-const downloadFile = async (filename: string) => {
+
+const downloadFile = async (filename: string, action: 'view' | 'download' = 'view') => {
   try {
     const loadingToast = await Toast.show({
-      text: 'Preparing download...',
+      text: action === 'view' ? 'Opening file...' : 'Opening file for download...',
       position: 'top'
     });
 
-    const response = await axios.get(
-      `https://school.klgilc.com/api/files/${filename}/download`,
-      {
-        headers: getAuthHeaders(),
-        responseType: 'blob',
-        timeout: 30000,
-      }
-    );
-
-    const blob = new Blob([response.data]);
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    
-    // Get filename from response headers or use the original filename
-    const contentDisposition = response.headers['content-disposition'];
-    let downloadFilename = filename;
-    
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-      if (filenameMatch) {
-        downloadFilename = filenameMatch[1];
-      }
-    }
-    
-    link.download = downloadFilename;
-    document.body.appendChild(link);
-    link.click();
-    
-    // Clean up
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // For both view and download, just open the file in a new tab
+    // Let the browser handle whether to show or download based on file type
+    const fileUrl = `https://storage.draugustinaosabutey.com/api/files/${filename}/view`;
+    window.open(fileUrl, '_blank');
 
     await Toast.show({
-      text: 'Download started successfully',
+      text: 'File opened successfully',
       position: 'top',
       duration: 'short'
     });
 
   } catch (error) {
-    console.error('Download error:', error);
-    
+    console.error('File access error:', error);
     await Toast.show({
-      text: 'Download failed. Please try again.',
+      text: `Failed to open file. Please try again.`,
       position: 'top',
       duration: 'long'
     });
   }
 };
 
+// Update loadNotification to reset attachment loading state
 const loadNotification = async () => {
   try {
     loading.value = true;
     error.value = false;
+    attachmentLoading.value = false; // Reset attachment loading
 
     const response = await axios.get(
       `https://klegg-app-whh7m.ondigitalocean.app/api/notifications/${notificationId}`,
@@ -509,6 +540,11 @@ const loadNotification = async () => {
     notification.value = response.data;
 
     console.log("Notification loaded:", response.data);
+
+    // If there's an image attachment, set loading state
+    if (notification.value?.attachment && isImageFile(notification.value.attachment)) {
+      attachmentLoading.value = true;
+    }
 
     // Mark as read
     if (response.data.is_read === 0) {
@@ -532,6 +568,8 @@ const loadNotification = async () => {
     loading.value = false;
   }
 };
+  
+
 
 const loadComments = async (page = 1) => {
   try {
@@ -817,6 +855,78 @@ onIonViewWillEnter(async () => {
 </script>
 
 <style scoped>
+/* Attachment Loading States */
+.attachment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.attachment-loading p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.file-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* Modal Loading State */
+.modal-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.modal-loading p {
+  color: white;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Ensure proper transitions for loading states */
+.attachment-image {
+  transition: opacity 0.3s ease;
+}
+
+.modal-image {
+  transition: opacity 0.3s ease;
+}
+
+/* Disabled state for file items */
+.file-attachment ion-item[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Responsive adjustments for loading states */
+@media (max-width: 480px) {
+  .attachment-loading {
+    height: 150px;
+  }
+  
+  .attachment-loading p {
+    font-size: 0.8rem;
+  }
+}
+
 /* Loading State */
 .loading-container {
   display: flex;
@@ -1127,4 +1237,141 @@ ion-icon {
     transform: translateY(0);
   }
 }
+
+/* Attachment Loading States */
+.attachment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.attachment-loading p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.file-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* Modal Loading State */
+.modal-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.modal-loading p {
+  color: white;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Ensure proper transitions for loading states */
+.attachment-image {
+  transition: opacity 0.3s ease;
+}
+
+.modal-image {
+  transition: opacity 0.3s ease;
+}
+
+/* Disabled state for file items */
+.file-attachment ion-item[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Responsive adjustments for loading states */
+@media (max-width: 480px) {
+  .attachment-loading {
+    height: 150px;
+  }
+  
+  .attachment-loading p {
+    font-size: 0.8rem;
+  }
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 300px;
+  background: var(--ion-color-medium-shade);
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.skeleton-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: wave 1.5s infinite;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.image-skeleton {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
+  background-size: 400% 100%;
+  animation: skeletonLoading 1.4s ease infinite;
+  margin-top: 10px;
+}
+
+@keyframes skeletonLoading {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.attachment-image {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.attachment-image {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+  cursor: pointer; /* Makes it feel clickable */
+}
+
+
 </style>

@@ -70,6 +70,7 @@
           <IonLabel>Share App</IonLabel>
         </IonItem>
 
+
         <IonItem button id="about-alert">
           <IonIcon slot="start" :icon="informationCircleOutline" color="medium" />
           <IonLabel>About</IonLabel>
@@ -78,8 +79,8 @@
         <IonAlert
           trigger="about-alert"
           header="Klegg"
-          sub-header="Version 1.0.9"
-          message="Ⓒ 2025 - Klegg Institute of Language and Communication."
+          sub-header="Version 1.1.0"
+          message="Ⓒ 2026 - Klegg Institute of Language and Communication."
           :buttons="closeAlert"
         ></IonAlert>
       </IonList>
@@ -103,6 +104,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
+import { Capacitor } from "@capacitor/core";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { Share } from "@capacitor/share";
@@ -187,6 +189,22 @@ onMounted(async () => {
 
 
 const shareApp = async () => {
+  const platform = Capacitor.getPlatform();
+
+  if (platform === "android") {
+    return shareAndroid();
+  }
+
+  if (platform === "ios") {
+    return shareIos();
+  }
+
+  // Default → Web
+  return shareWeb();
+};
+
+
+const shareWeb = async () => {
   await Share.share({
     title: "Klegg",
     text: "Access the Klegg app on the web.",
@@ -197,26 +215,26 @@ const shareApp = async () => {
 };
 
 
-// const shareApp = async () => {
-//   await Share.share({
-//     title: "Download Klegg.",
-//     text: "Get the Klegg app on the Google Play Store.",
-//     url: "https://play.google.com/store/apps/details?id=com.webmucho.klegg",
-//     dialogTitle:
-//       "Available to learners at the Klegg Institute of Language and Communication",
-//   });
-// };
+const shareAndroid = async () => {
+  await Share.share({
+    title: "Download Klegg.",
+    text: "Get the Klegg app on the Google Play Store.",
+    url: "https://play.google.com/store/apps/details?id=com.webmucho.klegg",
+    dialogTitle:
+      "Available to learners at the Klegg Institute of Language and Communication",
+  });
+};
 
 
-// const shareApp = async () => {
-//   await Share.share({
-//     title: "Download Klegg.",
-//     text: "Get the Klegg app on the App Store.",
-//     url: "https://apps.apple.com/gh/app/klegg/id6753220908",
-//     dialogTitle:
-//       "Available to learners at the Klegg Institute of Language and Communication",
-//   });
-// };
+const shareIos = async () => {
+  await Share.share({
+    title: "Download Klegg.",
+    text: "Get the Klegg app on the App Store.",
+    url: "https://apps.apple.com/gh/app/klegg/id6753220908",
+    dialogTitle:
+      "Available to learners at the Klegg Institute of Language and Communication",
+  });
+};
 
 const navigateToExternal = (url: string) => {
   window.location.href = url;

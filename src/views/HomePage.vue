@@ -177,6 +177,7 @@ import { isPlatform } from '@ionic/vue';
 import { useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
 import { updateStatusBar } from '@/utils/statusBar';
+import { oneSignalService } from '@/services/onesignal';
 
 
 interface Notification {
@@ -433,11 +434,23 @@ const initThemeDetection = () => {
   return prefersDark;
 };
 
+
+// Add this function
+const setupOneSignal = async (external_id_sub:string) => {
+  const user_id = 'user_' + external_id_sub;
+  await oneSignalService.setUser(user_id);
+  console.log('OneSignal user set:', user_id);
+};
+
+
 // Initialize data
 onMounted(async () => {
   try {
     detectPlatform();
     initThemeDetection();
+    const currentUserName = userData?.username; // Make sure this matches your user data structure
+    console.log('Current user Name:', currentUserName);
+    await setupOneSignal(currentUserName);
     await fetchData();
   } catch (error) {
     console.error("Initialization error:", error);

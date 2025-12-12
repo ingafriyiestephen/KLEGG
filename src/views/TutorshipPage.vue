@@ -122,7 +122,9 @@ import {
   calendarOutline,
   checkmarkDoneOutline,
   documentTextOutline,
+  documentAttachOutline,
   documentOutline,
+  pencilOutline,
   chatbubbleOutline,
   settingsOutline,
   clipboardOutline,
@@ -132,6 +134,8 @@ import {
   schoolOutline,
   peopleCircleOutline,
   desktopOutline,
+  paperPlaneOutline,
+  createOutline,
 } from "ionicons/icons";
 import axios from "axios";
 import { ref, onMounted, onUnmounted } from "vue";
@@ -238,8 +242,9 @@ const firstRowActions = [
 ];
 
 const secondRowActions = [
-  { id: 4, icon: checkmarkOutline, label: "Assessment", url: "assessment" },
-  { id: 5, icon: documentOutline, label: "Exam", url: "exam" },
+  { id: 4, icon: documentAttachOutline, label: "Materials", url: "materials" },
+  { id: 5, icon: checkmarkOutline, label: "Assessment", url: "assessment" },
+  { id: 6, icon: createOutline, label: "Exam", url: "exam" },
 ];
 
 const handleCardClick = (id: any) => {

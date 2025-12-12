@@ -386,7 +386,7 @@ const accessFile = async (filename: string, action: 'view' | 'download' = 'view'
 
     // For both view and download, just open the file in a new tab
     // Let the browser handle whether to show or download based on file type
-    const fileUrl = `https://school.klgilc.com/api/files/${filename}/view`;
+    const fileUrl = `https://storage.draugustinaosabutey.com/api/files/${filename}/view`;
     window.open(fileUrl, '_blank');
 
     await Toast.show({
