@@ -1,1 +1,0 @@
-import{bt as n}from"./index-KRMmF5hz.js";class s extends n{async show(t){if(typeof document<"u"){let a=2e3;t.duration&&(a=t.duration==="long"?3500:2e3);const e=document.createElement("pwa-toast");e.duration=a,e.message=t.text,document.body.appendChild(e)}}}export{s as ToastWeb};

@@ -50,20 +50,18 @@
           class="day-card"
           :class="{ 'today-card': day.isToday }"
         >
-        <!-- In your ion-card-header section -->
-        <ion-card-header>
-          <ion-card-title class="day-title">
-            {{ day.name }}
-            <ion-badge color="success" v-if="day.isToday">Today</ion-badge>
-          </ion-card-title>
-          <!-- Add course name here -->
-          <ion-card-subtitle 
-            class="course-name" 
-            v-if="day.courseName && day.courseName !== '-'"
-          >
-            {{ day.courseName }}
-          </ion-card-subtitle>
-        </ion-card-header>
+          <ion-card-header>
+            <ion-card-title class="day-title">
+              {{ day.name }}
+              <ion-badge color="success" v-if="day.isToday">Today</ion-badge>
+            </ion-card-title>
+            <ion-card-subtitle 
+              class="course-name" 
+              v-if="day.courseName && day.courseName !== '-'"
+            >
+              {{ day.courseName }}
+            </ion-card-subtitle>
+          </ion-card-header>
 
           <ion-card-content class="time-content">
             <ion-item lines="none">
@@ -75,39 +73,29 @@
               <ion-label> {{ day.startTime }} - {{ day.endTime }} </ion-label>
             </ion-item>
             
-            <!-- Replace this section in your template -->
-            <!-- Join Link Section -->
+            <!-- Join Button Section - SIMPLIFIED -->
             <div class="join-section" v-if="day.isToday">
               <ion-button 
                 class="join-button"
-                :disabled="!day.canJoin || !day.meetingLink"
-                :fill="getButtonFill(day)"
-                :color="getButtonColor(day)"
+                :disabled="!day.hasMeetingLink"
+                :fill="day.hasMeetingLink ? 'solid' : 'outline'"
+                :color="day.hasMeetingLink ? 'success' : 'medium'"
                 @click="joinClass(day)"
                 expand="block"
               >
-                <ion-icon slot="start" :icon="getButtonIcon(day)"></ion-icon>
-                {{ getButtonText(day) }}
+                <ion-icon slot="start" :icon="day.hasMeetingLink ? videocamOutline : timeOutline"></ion-icon>
+                {{ day.hasMeetingLink ? 'Enter Classroom' : 'No Meeting Link' }}
               </ion-button>
               
-              <!-- No meeting link message -->
-              <div class="no-link-message" v-if="!day.meetingLink && day.canJoin">
-                <ion-text color="danger">
-                  <small>Meeting link not available</small>
-                </ion-text>
-              </div>
-              
-              <!-- Countdown Timer -->
-              <div class="countdown" v-if="day.countdown && !day.canJoin && !day.classInProgress">
-                <ion-text color="medium">
-                  Starts in {{ day.countdown }}
-                </ion-text>
-              </div>
-              
-              <!-- Status Message -->
-              <div class="status-message" v-if="day.statusMessage">
-                <ion-text :color="day.statusColor">
-                  {{ day.statusMessage }}
+              <!-- Simple status message -->
+              <div class="status-message">
+                <ion-text :color="day.hasMeetingLink ? 'success' : 'medium'">
+                  <small>
+                    {{ day.hasMeetingLink ? 
+                      `Class scheduled for today at ${day.startTime}` : 
+                      'Meeting link not available' 
+                    }}
+                  </small>
                 </ion-text>
               </div>
             </div>
@@ -115,7 +103,7 @@
             <!-- Not Today Message -->
             <div class="not-today-message" v-else>
               <ion-text color="medium">
-                Join link will be available on {{ day.name }}
+                {{ getFutureDayMessage(day) }}
               </ion-text>
             </div>
           </ion-card-content>
@@ -126,10 +114,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted} from "vue";
+import { ref, onMounted, computed } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
-import { useRoute } from "vue-router";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { Toast } from "@capacitor/toast";
 import { updateStatusBar } from '@/utils/statusBar';
 import {
@@ -156,36 +143,35 @@ import {
   timeOutline, 
   calendarOutline, 
   warningOutline, 
-  videocamOutline,
-  checkmarkCircleOutline 
+  videocamOutline
 } from "ionicons/icons";
 import axios from "axios";
 
 interface TimetableEntry {
   tutorship_id: number;
   tutorship_name?: string;
-  monday_course: string; // Add this
+  monday_course: string;
   monday_start: string;
   monday_end: string;
-  tuesday_course: string; // Add this
+  tuesday_course: string;
   tuesday_start: string;
   tuesday_end: string;
-  wednesday_course: string; // Add this
+  wednesday_course: string;
   wednesday_start: string;
   wednesday_end: string;
-  thursday_course: string; // Add this
+  thursday_course: string;
   thursday_start: string;
   thursday_end: string;
-  friday_course: string; // Add this
+  friday_course: string;
   friday_start: string;
   friday_end: string;
-  saturday_course: string; // Add this
+  saturday_course: string;
   saturday_start: string;
   saturday_end: string;
-  sunday_course: string; // Add this
+  sunday_course: string;
   sunday_start: string;
   sunday_end: string;
-  // Add meeting link fields
+  // Meeting links
   monday_meeting_link?: string | null;
   tuesday_meeting_link?: string | null;
   wednesday_meeting_link?: string | null;
@@ -198,24 +184,16 @@ interface TimetableEntry {
 interface DaySchedule {
   name: string;
   dayKey: string;
-  courseName: string; // Add this line
+  courseName: string;
   startTime: string;
   endTime: string;
   isToday: boolean;
-  canJoin: boolean;
-  classInProgress: boolean;
-  classEnded: boolean;
-  countdown?: string;
-  statusMessage?: string;
-  statusColor?: string;
-  startDateTime?: Date;
-  endDateTime?: Date;
+  hasMeetingLink: boolean;
   meetingLink?: string | null;
+  dayIndex: number;
 }
 
 const token = localStorage.getItem("parisklegg_token") || "";
-
-// Get the stored user data
 const userDataString = localStorage.getItem("parisklegg_user");
 const userData = userDataString ? JSON.parse(userDataString) : null;
 
@@ -228,13 +206,25 @@ const loading = ref<boolean>(true);
 const error = ref<boolean>(false);
 const hasClasses = ref<boolean>(false);
 const visibleDays = ref<DaySchedule[]>([]);
-let countdownInterval: number | null = null;
+const today = new Date();
+const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+// Day configuration
+const daysConfig = [
+  { name: "Sunday", dayKey: "sunday", index: 0 },
+  { name: "Monday", dayKey: "monday", index: 1 },
+  { name: "Tuesday", dayKey: "tuesday", index: 2 },
+  { name: "Wednesday", dayKey: "wednesday", index: 3 },
+  { name: "Thursday", dayKey: "thursday", index: 4 },
+  { name: "Friday", dayKey: "friday", index: 5 },
+  { name: "Saturday", dayKey: "saturday", index: 6 }
+];
 
 const getWeekDates = (): string => {
   const now = new Date();
-  const dayOfWeek = now.getDay() || 7;
+  const dayOfWeek = now.getDay();
   const monday = new Date(now);
-  monday.setDate(now.getDate() - dayOfWeek + 1);
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
@@ -247,135 +237,32 @@ const getWeekDates = (): string => {
   return `${monday.toLocaleDateString(undefined, options)} - ${sunday.toLocaleDateString(undefined, options)}`;
 };
 
-// Add these new helper functions
-const getButtonText = (day: DaySchedule): string => {
-  if (day.classEnded) return 'Class Ended';
-  if (day.classInProgress) return day.meetingLink ? 'Join Now' : 'No Link';
-  if (day.canJoin) return day.meetingLink ? 'Join Soon' : 'No Link';
-  return 'Join Soon';
+// Get message for future days
+const getFutureDayMessage = (day: DaySchedule): string => {
+  const daysUntil = (day.dayIndex - todayDayIndex + 7) % 7;
+  if (daysUntil === 1) return "Join link available tomorrow";
+  if (daysUntil > 0) return `Join link available in ${daysUntil} days`;
+  return "Join link available next week";
 };
 
-const getButtonColor = (day: DaySchedule): string => {
-  if (day.classEnded) return 'medium';
-  if (day.classInProgress) return 'success';
-  if (day.canJoin) return 'primary';
-  return 'medium';
-};
-
-// Replace the getButtonFill function
-const getButtonFill = (day: DaySchedule): "solid" | "outline" | "clear" => {
-  if (day.classEnded) return 'outline';
-  if (day.classInProgress) return 'solid';
-  if (day.canJoin) return 'solid';
-  return 'outline';
-};
-
-const getButtonIcon = (day: DaySchedule) => {
-  if (day.classEnded) return timeOutline;
-  if (day.classInProgress) return videocamOutline;
-  if (day.canJoin) return timeOutline;
-  return timeOutline;
-};
-
+// Simplified: Check if there's a valid class time
 const hasClassTime = (startTime: string, endTime: string): boolean => {
-  return (
-    !!startTime && startTime.trim() !== "" && !!endTime && endTime.trim() !== ""
-  );
-};
-
-// Parse time string and create Date object for today
-const parseClassTime = (timeString: string): Date => {
-  const [hours, minutes] = timeString.split(':').map(Number);
-  const today = new Date();
-  today.setHours(hours, minutes, 0, 0);
-  return today;
-};
-
-// Check if join should be enabled (10 minutes before class)
-const shouldEnableJoin = (startTime: Date): boolean => {
-  const now = new Date();
-  const tenMinutesBefore = new Date(startTime.getTime() - 10 * 60 * 1000);
-  return now >= tenMinutesBefore && now < startTime;
-};
-
-// Check if class is in progress
-const isClassInProgress = (startTime: Date, endTime: Date): boolean => {
-  const now = new Date();
-  return now >= startTime && now < endTime;
-};
-
-// Check if class has ended
-const isClassEnded = (endTime: Date): boolean => {
-  const now = new Date();
-  return now >= endTime;
-};
-
-// Calculate countdown until join becomes available
-const getCountdown = (startTime: Date): string => {
-  const now = new Date();
-  const tenMinutesBefore = new Date(startTime.getTime() - 10 * 60 * 1000);
-  
-  if (now < tenMinutesBefore) {
-    const diff = tenMinutesBefore.getTime() - now.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    } else {
-      return `${minutes}m`;
-    }
-  }
-  return '';
-};
-
-// Update join status for all classes
-const updateJoinStatus = () => {
-  visibleDays.value.forEach(day => {
-    if (day.isToday && day.startDateTime && day.endDateTime) {
-      const now = new Date();
-      const tenMinutesBefore = new Date(day.startDateTime.getTime() - 10 * 60 * 1000);
-      
-      // Reset status
-      day.canJoin = false;
-      day.statusMessage = '';
-      day.statusColor = 'medium';
-      
-      if (now < tenMinutesBefore) {
-        // Class hasn't started yet, join not available
-        day.countdown = getCountdown(day.startDateTime);
-        day.statusMessage = `Join available at ${formatTime(tenMinutesBefore)}`;
-      } else if (now >= tenMinutesBefore && now < day.startDateTime) {
-        // Join is available (10 minutes before class)
-        day.canJoin = true;
-        day.countdown = '';
-        day.statusMessage = 'Join now to enter class';
-        day.statusColor = 'success';
-      } else if (isClassInProgress(day.startDateTime, day.endDateTime)) {
-        // Class is in progress
-        day.canJoin = true;
-        day.countdown = '';
-        day.statusMessage = 'Class in progress - Join now';
-        day.statusColor = 'warning';
-      } else if (isClassEnded(day.endDateTime)) {
-        // Class has ended
-        day.countdown = '';
-        day.statusMessage = 'Class has ended';
-        day.statusColor = 'danger';
-      }
-    }
-  });
-};
-
-// Format time for display
-const formatTime = (date: Date): string => {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return !!startTime && 
+         startTime.trim() !== "" && 
+         startTime !== "00:00" && 
+         startTime !== "00:00:00" &&
+         !!endTime && 
+         endTime.trim() !== "" &&
+         endTime !== "00:00" &&
+         endTime !== "00:00:00";
 };
 
 const fetchTimetable = async () => {
   try {
     loading.value = true;
     error.value = false;
+    visibleDays.value = [];
+    hasClasses.value = false;
 
     const response = await axios.post(
       "https://klegg-app-whh7m.ondigitalocean.app/api/timetable",
@@ -387,8 +274,10 @@ const fetchTimetable = async () => {
         timeout: 20000,
       },
     );
+    
     console.log("Timetable response:", response.data);
     processTimetableData(response.data);
+    
   } catch (err) {
     handleFetchError(err);
     error.value = true;
@@ -398,19 +287,6 @@ const fetchTimetable = async () => {
 };
 
 const processTimetableData = (data: TimetableEntry[]) => {
-  const days = [
-    { name: "Monday", dayKey: "monday" },
-    { name: "Tuesday", dayKey: "tuesday" },
-    { name: "Wednesday", dayKey: "wednesday" },
-    { name: "Thursday", dayKey: "thursday" },
-    { name: "Friday", dayKey: "friday" },
-    { name: "Saturday", dayKey: "saturday" },
-    { name: "Sunday", dayKey: "sunday" },
-  ];
-
-  const todayIndex = new Date().getDay();
-  const todayKey = days[todayIndex === 0 ? 6 : todayIndex - 1].dayKey;
-
   visibleDays.value = [];
   hasClasses.value = false;
 
@@ -418,46 +294,30 @@ const processTimetableData = (data: TimetableEntry[]) => {
     if (entry.tutorship_id === tutorshipId) {
       tutorshipName.value = entry.tutorship_name || "My Timetable";
 
-      days.forEach((day) => {
-        const startTime = entry[
-          `${day.dayKey}_start` as keyof TimetableEntry
-        ] as string;
-        const endTime = entry[
-          `${day.dayKey}_end` as keyof TimetableEntry
-        ] as string;
-        const courseName = entry[
-          `${day.dayKey}_course` as keyof TimetableEntry
-        ] as string; // Get course name
+      // Process each day
+      daysConfig.forEach((dayConfig) => {
+        const startTime = entry[`${dayConfig.dayKey}_start` as keyof TimetableEntry] as string;
+        const endTime = entry[`${dayConfig.dayKey}_end` as keyof TimetableEntry] as string;
+        const courseName = entry[`${dayConfig.dayKey}_course` as keyof TimetableEntry] as string;
+        const meetingLink = entry[`${dayConfig.dayKey}_meeting_link` as keyof TimetableEntry] as string | null;
 
         if (hasClassTime(startTime, endTime)) {
           hasClasses.value = true;
           
-          const startDateTime = parseClassTime(startTime);
-          const endDateTime = parseClassTime(endTime);
-          const isToday = day.dayKey === todayKey;
-          const meetingLink = entry[
-            `${day.dayKey}_meeting_link` as keyof TimetableEntry
-          ] as string | null;
-          
-          const daySchedule: DaySchedule = {
-            name: day.name,
-            dayKey: day.dayKey,
-            courseName: courseName, // Add course name here
-            startTime,
-            endTime,
-            isToday,
-            canJoin: false,
-            classInProgress: false,
-            classEnded: false,
-            startDateTime,
-            endDateTime,
-            meetingLink: meetingLink
-          };
+          const isToday = dayConfig.index === todayDayIndex;
+          const hasMeetingLink = !!meetingLink && meetingLink.trim() !== "";
 
-          // Initialize join status
-          if (isToday) {
-            updateDayJoinStatus(daySchedule);
-          }
+          const daySchedule: DaySchedule = {
+            name: dayConfig.name,
+            dayKey: dayConfig.dayKey,
+            courseName: courseName || "General Class",
+            startTime: formatDisplayTime(startTime),
+            endTime: formatDisplayTime(endTime),
+            isToday,
+            hasMeetingLink,
+            meetingLink,
+            dayIndex: dayConfig.index
+          };
 
           visibleDays.value.push(daySchedule);
         }
@@ -465,70 +325,28 @@ const processTimetableData = (data: TimetableEntry[]) => {
     }
   });
 
-  // Start countdown timer if there are today's classes
-  startCountdownTimer();
+  // Sort by day index (starting from today)
+  visibleDays.value.sort((a, b) => {
+    const aDiff = (a.dayIndex - todayDayIndex + 7) % 7;
+    const bDiff = (b.dayIndex - todayDayIndex + 7) % 7;
+    return aDiff - bDiff;
+  });
 };
 
-// Replace the updateDayJoinStatus function
-const updateDayJoinStatus = (day: DaySchedule) => {
-  if (!day.startDateTime || !day.endDateTime) return;
-
-  const now = new Date();
-  const tenMinutesBefore = new Date(day.startDateTime.getTime() - 10 * 60 * 1000);
-  
-  // Reset all states
-  day.canJoin = false;
-  day.classInProgress = false;
-  day.classEnded = false;
-  day.countdown = '';
-  day.statusMessage = '';
-  day.statusColor = 'medium';
-  
-  if (now < tenMinutesBefore) {
-    // Class hasn't started yet
-    day.countdown = getCountdown(day.startDateTime);
-    day.statusMessage = `Join available at ${formatTime(tenMinutesBefore)}`;
-    day.statusColor = 'medium';
-  } else if (now >= tenMinutesBefore && now < day.startDateTime) {
-    // Join window is open but class hasn't started
-    day.canJoin = true;
-    day.statusMessage = 'Class starting soon - Join now';
-    day.statusColor = 'success';
-  } else if (isClassInProgress(day.startDateTime, day.endDateTime)) {
-    // Class is in progress
-    day.canJoin = true;
-    day.classInProgress = true;
-    day.statusMessage = 'Class in progress';
-    day.statusColor = 'warning';
-  } else if (isClassEnded(day.endDateTime)) {
-    // Class has ended
-    day.classEnded = true;
-    day.statusMessage = 'Class has ended';
-    day.statusColor = 'danger';
-  }
-};
-
-const startCountdownTimer = () => {
-  // Clear existing interval
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-  }
-
-  // Update every minute
-  countdownInterval = window.setInterval(() => {
-    updateJoinStatus();
-  }, 60000);
+// Format time for display (remove seconds if present)
+const formatDisplayTime = (timeString: string): string => {
+  if (!timeString) return "";
+  // Remove seconds if present
+  return timeString.split(':').slice(0, 2).join(':');
 };
 
 const joinClass = async (day: DaySchedule) => {
-  if (!day.canJoin || !day.meetingLink) {
-    if (!day.meetingLink) {
-      Toast.show({
-        text: 'Meeting link not available for this class',
-        position: 'top',
-        duration: 'short'
-      });
-    }
+  if (!day.hasMeetingLink || !day.meetingLink) {
+    Toast.show({
+      text: 'Meeting link not available for this class',
+      position: 'top',
+      duration: 'short'
+    });
     return;
   }
 
@@ -539,19 +357,25 @@ const joinClass = async (day: DaySchedule) => {
       duration: 'short'
     });
 
-    // Check if it's a Zoom link
-    if (day.meetingLink.includes('zoom.us')) {
-      // For better Zoom experience on mobile
-      const zoomUrl = day.meetingLink.replace('/j/', '/join/');
-      window.open(zoomUrl, '_system');
-    } else if (day.meetingLink.includes('meet.google.com')) {
-      // For Google Meet
-      window.open(day.meetingLink, '_system');
-    } else {
-      // For other meeting links
-      window.open(day.meetingLink, '_blank');
+    // For mobile apps, use _system to open in appropriate app
+    if (isMobile()) {
+      // For Zoom links
+      if (day.meetingLink.includes('zoom.us')) {
+        const zoomUrl = day.meetingLink.replace('/j/', '/join/');
+        window.open(zoomUrl, '_system');
+        return;
+      }
+      
+      // For Google Meet links
+      if (day.meetingLink.includes('meet.google.com')) {
+        window.open(day.meetingLink, '_system');
+        return;
+      }
     }
 
+    // For web or other links
+    window.open(day.meetingLink, '_blank');
+    
   } catch (error) {
     console.error('Error joining class:', error);
     Toast.show({
@@ -562,14 +386,18 @@ const joinClass = async (day: DaySchedule) => {
   }
 };
 
+const isMobile = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
 const getAuthHeaders = () => ({
   "Content-Type": "application/json",
-  Accept: "application/json",
-  Authorization: `Bearer ${token}`,
+  "Accept": "application/json",
+  "Authorization": `Bearer ${token}`,
 });
 
 const handleFetchError = (error: unknown) => {
-  console.error("Error fetching data:", error);
+  console.error("Error fetching timetable:", error);
 
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 401) {
@@ -592,7 +420,7 @@ const handleFetchError = (error: unknown) => {
   }
 
   Toast.show({
-    text: "Failed to load data. Please try again later",
+    text: "Failed to load timetable. Please try again later",
     position: "top",
   });
 };
@@ -602,12 +430,9 @@ const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryLis
   updateStatusBar(isDark);
 };
 
-// Initialize theme detection
 const initThemeDetection = () => {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-  // Set initial status bar based on current system theme
   handleSystemThemeChange(prefersDark);
-  // Listen for system theme changes
   prefersDark.addEventListener('change', handleSystemThemeChange);
   return prefersDark;
 };
@@ -618,17 +443,9 @@ onMounted(() => {
   fetchTimetable();
 });
 
-onIonViewWillEnter(async () => {
+onIonViewWillEnter(() => {
   initThemeDetection();
-});
-
-
-onUnmounted(() => {
-  // Clean up countdown interval
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
+  fetchTimetable();
 });
 </script>
 
@@ -637,7 +454,6 @@ onUnmounted(() => {
 .header-section {
   margin-bottom: 24px;
   text-align: center;
-  background: var(--ion-background-color);
 }
 
 .title {
@@ -659,11 +475,6 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   height: 200px;
-  background: var(--ion-background-color);
-}
-
-.loading-container ion-spinner {
-  color: var(--ion-color-primary);
 }
 
 /* Empty & Error States */
@@ -676,21 +487,18 @@ onUnmounted(() => {
   text-align: center;
   height: 60vh;
   padding: 20px;
-  background: var(--ion-background-color);
 }
 
 .empty-state ion-icon {
   color: var(--ion-color-medium);
   font-size: 64px;
   margin-bottom: 16px;
-  opacity: 0.7;
 }
 
 .error-state ion-icon {
   color: var(--ion-color-danger);
   font-size: 64px;
   margin-bottom: 16px;
-  opacity: 0.8;
 }
 
 .empty-state h3,
@@ -698,7 +506,6 @@ onUnmounted(() => {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 8px;
-  color: var(--ion-text-color);
 }
 
 .empty-state p,
@@ -706,7 +513,6 @@ onUnmounted(() => {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
   margin-bottom: 16px;
-  line-height: 1.4;
 }
 
 /* Timetable Cards */
@@ -714,32 +520,18 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
-  background: var(--ion-background-color);
 }
 
 .day-card {
-  background: var(--ion-card-background);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.2s ease;
   border-left: 4px solid var(--ion-color-primary);
-  border: 1px solid var(--ion-border-color);
 }
 
 .today-card {
   border-left: 4px solid var(--ion-color-success);
   background: rgba(var(--ion-color-success-rgb), 0.05);
-  border-color: rgba(var(--ion-color-success-rgb), 0.2);
-}
-
-.day-card-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--ion-border-color);
-  background: var(--ion-item-background);
-  border-radius: 12px 12px 0 0;
 }
 
 .day-title {
@@ -748,70 +540,41 @@ onUnmounted(() => {
   justify-content: space-between;
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ion-text-color);
-}
-
-.day-date {
-  font-size: 0.8rem;
-  color: var(--ion-color-medium);
-  font-weight: 400;
 }
 
 .time-content {
-  padding: 16px;
-  background: var(--ion-card-background);
-  border-radius: 0 0 12px 12px;
+  padding-top: 0;
 }
 
 .time-content ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --background: transparent;
-  --border-color: var(--ion-border-color);
-  margin-bottom: 12px;
-}
-
-.time-content ion-item:last-child {
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .time-content ion-icon {
   margin-right: 8px;
-  color: var(--ion-color-primary);
 }
 
-/* Join Section Styles */
+/* Join Section */
 .join-section {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--ion-color-step-100);
 }
 
-.join-button {
-  margin-bottom: 8px;
-}
-
 .join-button:not(.button-disabled) {
-  --box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.3);
-}
-
-.countdown {
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.countdown ion-text {
-  font-size: 0.8rem;
-  font-weight: 500;
+  --box-shadow: 0 4px 12px rgba(var(--ion-color-success-rgb), 0.3);
 }
 
 .status-message {
   text-align: center;
+  margin-top: 8px;
 }
 
 .status-message ion-text {
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.85rem;
 }
 
 .not-today-message {
@@ -822,83 +585,8 @@ onUnmounted(() => {
 }
 
 .not-today-message ion-text {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-style: italic;
-}
-
-/* Responsive adjustments */
-@media (min-width: 768px) {
-  .timetable-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .day-card {
-    margin: 0;
-  }
-}
-
-@media (min-width: 1024px) {
-  .timetable-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Animation for cards */
-.day-card:active {
-  transform: scale(0.98);
-}
-
-.day-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-/* Focus states for accessibility */
-.day-card:focus-visible {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: 2px;
-}
-
-.join-button:focus {
-  --box-shadow: 0 0 0 2px var(--ion-color-primary);
-}
-
-/* Loading animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.day-card {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.day-card:nth-child(odd) {
-  animation-delay: 0.1s;
-}
-
-.day-card:nth-child(even) {
-  animation-delay: 0.2s;
-}
-
-.no-link-message {
-  text-align: center;
-  margin-top: 8px;
-}
-
-.no-link-message ion-text {
-  font-size: 0.8rem;
-  font-weight: 500;
 }
 
 .course-name {
@@ -908,8 +596,22 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-/* If you want to handle the case when there's no specific course name */
-.day-card-header:has(.course-name) {
-  padding-bottom: 12px;
+/* Responsive */
+@media (min-width: 768px) {
+  .timetable-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .timetable-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.day-card:active {
+  transform: scale(0.98);
 }
 </style>

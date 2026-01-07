@@ -1,0 +1,1 @@
+System.register(["./index-legacy-D7Bnmc80.js"],function(e,t){"use strict";var n,r;return{setters:[function(e){n=e.af,r=e.ag}],execute:function(){e("T",n("Toast",{web:function(){return r(function(){return t.import("./web-legacy-CkO6cMkR.js")},void 0).then(function(e){return new e.ToastWeb})}}))}}});

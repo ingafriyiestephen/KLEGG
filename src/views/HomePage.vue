@@ -31,6 +31,39 @@
 
       <!-- Main Content -->
       <div v-else>
+      <!-- Today's Class Alert -->
+      <div v-if="todayClassInfo" class="todays-class-alert">
+        <ion-card class="alert-card">
+          <ion-card-content class="alert-content">
+            <div class="alert-header">
+              <ion-icon :icon="videocamOutline" color="success" size="large"></ion-icon>
+              <div class="alert-text">
+                <h3>Class Today!</h3>
+                <p>{{ todayClassInfo.courseName }} at {{ todayClassInfo.startTime }}</p>
+              </div>
+            </div>
+            
+            <ion-button 
+              v-if="todayClassInfo.hasMeetingLink"
+              @click="joinTodayClass"
+              expand="block"
+              fill="solid"
+              color="success"
+              class="join-button"
+            >
+              <ion-icon slot="start" :icon="videocamOutline"></ion-icon>
+              Enter Classroom
+            </ion-button>
+            
+            <div v-else class="no-link-message">
+              <ion-text color="medium">
+                <small>Meeting link will be provided by your teacher</small>
+              </ion-text>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
         <!-- Recent Updates Section -->
         <ion-card class="content-card">
           <ion-card-header>
@@ -43,7 +76,7 @@
           <ion-card-content>
             <div v-if="latestNotification" class="notification-content">
               <p>
-                {{ truncateText(latestNotification.body, 100) }} <!-- Changed from notification_body to body -->
+                {{ truncateText(latestNotification.body, 100) }}
               </p>
               <ion-note>{{
                 formatDate(latestNotification.created_at)
@@ -91,11 +124,6 @@
               <ion-icon :icon="timeOutline"></ion-icon>
               <p>No attendance records yet</p>
             </div>
-            
-            <!-- Show attendance count for debugging -->
-            <!-- <ion-note v-if="attendances.length > 0" style="font-size: 12px; display: block; text-align: center; margin-top: 8px;">
-              {{ attendances.length }} attendance records found
-            </ion-note> -->
           </ion-card-content>
         </ion-card>
 
@@ -155,10 +183,7 @@ import {
   IonCardContent,
   IonNote,
   IonSpinner,
-  IonTabs,
-  IonTabBar,
-  IonTabButton,
-  IonLabel,
+  IonText,
 } from "@ionic/vue";
 import {
   homeOutline,
@@ -170,8 +195,9 @@ import {
   checkmarkDoneOutline,
   timeOutline,
   refreshOutline,
+  videocamOutline,
 } from "ionicons/icons";
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { isPlatform } from '@ionic/vue';
 import { useRouter } from "vue-router";
@@ -179,11 +205,10 @@ import { Toast } from "@capacitor/toast";
 import { updateStatusBar } from '@/utils/statusBar';
 import { oneSignalService } from '@/services/onesignal';
 
-
 interface Notification {
   id: number;
-  title: string; // Changed from notification_title
-  body: string; // Changed from notification_body
+  title: string;
+  body: string;
   is_read: boolean;
   created_at: string;
   user: any;
@@ -192,40 +217,91 @@ interface Notification {
   user_reaction: any;
 }
 
-interface ApiResponse {
-  current_page: number;
-  data: Notification[];
-  // ... other pagination properties
-}
-
 interface Attendance {
-  attendance_id: number; // Changed from id
+  attendance_id: number;
   tutorship_id: number;
   attendance_code: string;
   attendance_group: string;
   tutorship_name: string;
   user_id: number;
   student_name: string;
-  student_attendance: string; // This is correct!
+  student_attendance: string;
   teacher_name: string;
   attendance_date: string;
   created_at: string;
   updated_at: string;
 }
 
+interface TimetableEntry {
+  tutorship_id: number;
+  tutorship_name?: string;
+  monday_course: string;
+  monday_start: string;
+  monday_end: string;
+  tuesday_course: string;
+  tuesday_start: string;
+  tuesday_end: string;
+  wednesday_course: string;
+  wednesday_start: string;
+  wednesday_end: string;
+  thursday_course: string;
+  thursday_start: string;
+  thursday_end: string;
+  friday_course: string;
+  friday_start: string;
+  friday_end: string;
+  saturday_course: string;
+  saturday_start: string;
+  saturday_end: string;
+  sunday_course: string;
+  sunday_start: string;
+  sunday_end: string;
+  monday_meeting_link?: string | null;
+  tuesday_meeting_link?: string | null;
+  wednesday_meeting_link?: string | null;
+  thursday_meeting_link?: string | null;
+  friday_meeting_link?: string | null;
+  saturday_meeting_link?: string | null;
+  sunday_meeting_link?: string | null;
+}
+
+interface TodayClassInfo {
+  courseName: string;
+  startTime: string;
+  endTime: string;
+  hasMeetingLink: boolean;
+  meetingLink?: string | null;
+  tutorshipId: number;
+  tutorshipName: string;
+}
+
 const token = localStorage.getItem("parisklegg_token") || "";
-
-// Get the stored user data
-const userDataString = localStorage.getItem("parisklegg_user"); // or whatever your key is
+const userDataString = localStorage.getItem("parisklegg_user");
 const userData = userDataString ? JSON.parse(userDataString) : null;
-
-// Extract values with fallbacks
 const studentName = userData?.fullname || "";
+const userId = userData?.user_id || null;
 
 const router = useRouter();
 const loading = ref(true);
 const notifications = ref<Notification[]>([]);
 const attendances = ref<Attendance[]>([]);
+const todayClassInfo = ref<TodayClassInfo | null>(null);
+
+// Day configuration
+const daysConfig = [
+  { name: "Sunday", dayKey: "sunday", index: 0 },
+  { name: "Monday", dayKey: "monday", index: 1 },
+  { name: "Tuesday", dayKey: "tuesday", index: 2 },
+  { name: "Wednesday", dayKey: "wednesday", index: 3 },
+  { name: "Thursday", dayKey: "thursday", index: 4 },
+  { name: "Friday", dayKey: "friday", index: 5 },
+  { name: "Saturday", dayKey: "saturday", index: 6 }
+];
+
+// Get today's day index
+const today = new Date();
+const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+const todayDayKey = daysConfig.find(d => d.index === todayDayIndex)?.dayKey || '';
 
 // Compute greeting based on time of day
 const greeting = computed(() => {
@@ -240,39 +316,23 @@ const latestNotification = computed(() => {
   return notifications.value.length > 0 ? notifications.value[0] : null;
 });
 
-// Get latest attendance - sort by date to get the most recent
+// Get latest attendance
 const latestAttendance = computed(() => {
   if (attendances.value.length > 0) {
-    // Sort by created_at or attendance_date to get the most recent
     const sorted = [...attendances.value].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-    const latest = sorted[0];
-    console.log('Latest attendance:', latest);
-    return latest;
+    return sorted[0];
   }
-  console.log('No attendances available');
   return null;
 });
 
-
-// Safe attendance access
-const getLatestAttendance = computed(() => {
-  try {
-    if (attendances.value && attendances.value.length > 0) {
-      const sorted = [...attendances.value].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      return sorted[0];
-    }
-    return null;
-  } catch (error) {
-    console.error('Error processing attendance data:', error);
-    return null;
-  }
+// Check if there's a class today
+const hasClassToday = computed(() => {
+  return todayClassInfo.value !== null;
 });
 
-// Default avatar (can be replaced with actual user avatar)
+// Default avatar
 const userAvatar = computed(() => {
   return "/assets/img/login-logo.png";
 });
@@ -315,10 +375,108 @@ const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 };
 
+// Format time for display
+const formatDisplayTime = (timeString: string): string => {
+  if (!timeString) return "";
+  return timeString.split(':').slice(0, 2).join(':');
+};
+
+// Check if there's a valid class time
+const hasClassTime = (startTime: string, endTime: string): boolean => {
+  return !!startTime && 
+         startTime.trim() !== "" && 
+         startTime !== "00:00" && 
+         startTime !== "00:00:00" &&
+         !!endTime && 
+         endTime.trim() !== "" &&
+         endTime !== "00:00" &&
+         endTime !== "00:00:00";
+};
+
+
+
+// Update checkTodayClasses to accept timetable data
+const checkTodayClassesFromData = (timetableData: TimetableEntry[], tutorshipId: number, tutorshipName: string) => {
+  // Get today's day key
+  const today = new Date();
+  const todayDayIndex = today.getDay();
+  const todayDayKey = daysConfig.find(d => d.index === todayDayIndex)?.dayKey || '';
+  
+  if (!todayDayKey) return;
+
+  for (const entry of timetableData) {
+    if (entry.tutorship_id === tutorshipId) {
+      const startTime = entry[`${todayDayKey}_start` as keyof TimetableEntry] as string;
+      const endTime = entry[`${todayDayKey}_end` as keyof TimetableEntry] as string;
+      const courseName = entry[`${todayDayKey}_course` as keyof TimetableEntry] as string;
+      const meetingLink = entry[`${todayDayKey}_meeting_link` as keyof TimetableEntry] as string | null;
+      
+      if (hasClassTime(startTime, endTime)) {
+        todayClassInfo.value = {
+          courseName: courseName || tutorshipName || "Class",
+          startTime: formatDisplayTime(startTime),
+          endTime: formatDisplayTime(endTime),
+          hasMeetingLink: !!meetingLink && meetingLink.trim() !== "",
+          meetingLink: meetingLink,
+          tutorshipId: tutorshipId,
+          tutorshipName: tutorshipName
+        };
+        return; // Found today's class
+      }
+    }
+  }
+};
+
 // Navigation methods
 const goToClasses = () => router.push("/tutorships");
 const goToNotifications = () => router.push("/notifications");
 const goToSettings = () => router.push("/settings");
+
+// Join today's class
+const joinTodayClass = async () => {
+  if (!todayClassInfo.value?.hasMeetingLink || !todayClassInfo.value?.meetingLink) {
+    Toast.show({
+      text: 'Meeting link not available',
+      position: 'top',
+      duration: 'short'
+    });
+    return;
+  }
+
+  try {
+    Toast.show({
+      text: `Opening ${todayClassInfo.value.courseName}...`,
+      position: 'top',
+      duration: 'short'
+    });
+
+    // Open meeting link
+    if (isMobile()) {
+      if (todayClassInfo.value.meetingLink.includes('zoom.us')) {
+        const zoomUrl = todayClassInfo.value.meetingLink.replace('/j/', '/join/');
+        window.open(zoomUrl, '_system');
+      } else if (todayClassInfo.value.meetingLink.includes('meet.google.com')) {
+        window.open(todayClassInfo.value.meetingLink, '_system');
+      } else {
+        window.open(todayClassInfo.value.meetingLink, '_blank');
+      }
+    } else {
+      window.open(todayClassInfo.value.meetingLink, '_blank');
+    }
+    
+  } catch (error) {
+    console.error('Error joining class:', error);
+    Toast.show({
+      text: 'Failed to open meeting link',
+      position: 'top',
+      duration: 'short'
+    });
+  }
+};
+
+const isMobile = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
 
 // Refresh data
 const refreshData = async () => {
@@ -335,47 +493,139 @@ const refreshData = async () => {
 };
 
 
-// Fetch data from API
+
+// Fetch all data
 const fetchData = async () => {
   try {
-    const [notificationsRes, attendancesRes] = await Promise.all([
+    const [notificationsRes, attendancesRes, classesRes] = await Promise.all([
       axios.get("https://klegg-app-whh7m.ondigitalocean.app/api/notifications", {
         headers: getAuthHeaders(),
       }),
       axios.get("https://klegg-app-whh7m.ondigitalocean.app/api/attendances", {
         headers: getAuthHeaders(),
       }),
+      axios.get("https://klegg-app-whh7m.ondigitalocean.app/api/tutorships", {
+        headers: getAuthHeaders(),
+      })
     ]);
 
-    // Notifications: paginated response (access .data.data)
+    // Notifications
     notifications.value = notificationsRes.data.data || [];
     
-    // Attendances: direct array response (access .data directly)
+    // Attendances
     const allAttendances = attendancesRes.data || [];
-    
-    // Filter attendances to show only the current student's records
-    const currentUserId = userData?.user_id; // Make sure this matches your user data structure
-    console.log('Current user ID:', currentUserId);
-    console.log('All attendances before filtering:', allAttendances);
-    
-    if (currentUserId) {
-      attendances.value = allAttendances.filter((attendance: Attendance) => {
-        // Use the correct field that identifies the student
-        // This could be user_id, student_id, etc. - check your API response
-        const matches = attendance.user_id === currentUserId;
-        console.log(`Attendance ${attendance.attendance_id}: user_id=${attendance.user_id}, matches=${matches}`);
-        return matches;
-      });
+    if (userId) {
+      attendances.value = allAttendances.filter((attendance: Attendance) => 
+        attendance.user_id === userId
+      );
     } else {
       attendances.value = [];
     }
 
-    console.log('Filtered attendances for current user:', attendances.value);
+    // Get user's classes and filter for this user
+    const allClasses = classesRes.data || [];
+    const userClasses = allClasses.filter((classItem: any) => {
+      try {
+        const studentIds = classItem.students_list
+          ?.split(",")
+          .map(Number)
+          .filter((id: number) => !isNaN(id)) || [];
+        return studentIds.includes(userId);
+      } catch (e) {
+        console.warn("Error parsing students_list", classItem);
+        return false;
+      }
+    });
+
+    // Now check timetable for each class to find today's class
+    await checkTodaysClasses(userClasses);
 
   } catch (error: any) {
     handleFetchError(error);
   }
 };
+
+// Check for today's classes across all user classes
+const checkTodaysClasses = async (userClasses: any[]) => {
+  todayClassInfo.value = null;
+  
+  // Get today's day key
+  const today = new Date();
+  const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const todayDayKey = daysConfig.find(d => d.index === todayDayIndex)?.dayKey || '';
+  
+  if (!todayDayKey) return;
+
+  // Check timetable for each class
+  for (const classItem of userClasses) {
+    try {
+      const response = await axios.post(
+        "https://klegg-app-whh7m.ondigitalocean.app/api/timetable",
+        {
+          tutorship_id: classItem.tutorship_id,
+        },
+        {
+          headers: getAuthHeaders(),
+          timeout: 10000,
+        },
+      );
+
+      const timetableData = response.data || [];
+      
+      // Check if this class has a timetable entry for today
+      for (const entry of timetableData) {
+        if (entry.tutorship_id === classItem.tutorship_id) {
+          const startTime = entry[`${todayDayKey}_start` as keyof TimetableEntry] as string;
+          const endTime = entry[`${todayDayKey}_end` as keyof TimetableEntry] as string;
+          const courseName = entry[`${todayDayKey}_course` as keyof TimetableEntry] as string;
+          const meetingLink = entry[`${todayDayKey}_meeting_link` as keyof TimetableEntry] as string | null;
+          
+          if (hasClassTime(startTime, endTime)) {
+            todayClassInfo.value = {
+              courseName: courseName || classItem.tutorship_name || "Class",
+              startTime: formatDisplayTime(startTime),
+              endTime: formatDisplayTime(endTime),
+              hasMeetingLink: !!meetingLink && meetingLink.trim() !== "",
+              meetingLink: meetingLink,
+              tutorshipId: classItem.tutorship_id,
+              tutorshipName: classItem.tutorship_name
+            };
+            return; // Found today's class, stop searching
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error checking timetable for class ${classItem.tutorship_id}:`, error);
+      // Continue checking other classes even if one fails
+    }
+  }
+};
+
+// Remove or update the old fetchTimetable function since we don't need it separately anymore
+const fetchTimetable = async (tutorshipId: number): Promise<TimetableEntry[]> => {
+  try {
+    const response = await axios.post(
+      "https://klegg-app-whh7m.ondigitalocean.app/api/timetable",
+      {
+        tutorship_id: tutorshipId,
+      },
+      {
+        headers: getAuthHeaders(),
+        timeout: 10000,
+      },
+    );
+    
+    console.log(`Timetable response for ${tutorshipId}:`, response.data);
+    return response.data || [];
+  } catch (error) {
+    console.error(`Error fetching timetable for ${tutorshipId}:`, error);
+    return [];
+  }
+};
+
+
+
+
 
 // Get auth headers
 const getAuthHeaders = () => {
@@ -386,13 +636,13 @@ const getAuthHeaders = () => {
   };
 };
 
-// Separate error handler for better reusability
+// Separate error handler
 const handleFetchError = (error: unknown) => {
   console.error("Error fetching data:", error);
 
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 401) {
-      router.replace("/"); // More specific route
+      router.replace("/");
       Toast.show({
         text: "Session expired. Please login again",
         position: "top",
@@ -410,7 +660,6 @@ const handleFetchError = (error: unknown) => {
     }
   }
 
-  // Generic error for all other cases
   Toast.show({
     text: "Failed to load data. Please try again later",
     position: "top",
@@ -420,36 +669,30 @@ const handleFetchError = (error: unknown) => {
 // Handle system theme changes
 const handleSystemThemeChange = (mediaQuery: MediaQueryListEvent | MediaQueryList) => {
   const isDark = mediaQuery.matches;
-  // Update status bar automatically using our utility
   updateStatusBar(isDark);
 };
 
 // Initialize theme detection
 const initThemeDetection = () => {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-  // Set initial status bar based on current system theme
   handleSystemThemeChange(prefersDark);
-  // Listen for system theme changes
   prefersDark.addEventListener('change', handleSystemThemeChange);
   return prefersDark;
 };
 
-
-// Add this function
-const setupOneSignal = async (external_id_sub:string) => {
+// Setup OneSignal
+const setupOneSignal = async (external_id_sub: string) => {
   const user_id = 'user_' + external_id_sub;
   await oneSignalService.setUser(user_id);
   console.log('OneSignal user set:', user_id);
 };
-
 
 // Initialize data
 onMounted(async () => {
   try {
     detectPlatform();
     initThemeDetection();
-    const currentUserName = userData?.username; // Make sure this matches your user data structure
-    console.log('Current user Name:', currentUserName);
+    const currentUserName = userData?.username;
     await setupOneSignal(currentUserName);
     await fetchData();
   } catch (error) {
@@ -458,7 +701,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
 </script>
 
 <style scoped>
@@ -494,6 +736,66 @@ ion-toolbar {
 .student-name {
   font-size: 18px;
   font-weight: 600;
+}
+
+/* Today's Class Alert */
+.todays-class-alert {
+  margin: 16px;
+}
+
+.alert-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--ion-color-success-rgb), 0.1),
+    rgba(var(--ion-color-primary-rgb), 0.1)
+  );
+  border: 1px solid rgba(var(--ion-color-success-rgb), 0.2);
+}
+
+.alert-content {
+  padding: 16px;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.alert-header ion-icon {
+  margin-right: 12px;
+}
+
+.alert-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ion-color-success);
+}
+
+.alert-text p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.join-button {
+  --box-shadow: 0 4px 12px rgba(var(--ion-color-success-rgb), 0.3);
+}
+
+.join-button:active {
+  --box-shadow: 0 2px 8px rgba(var(--ion-color-success-rgb), 0.3);
+}
+
+.no-link-message {
+  text-align: center;
+  padding: 8px;
+}
+
+.no-link-message ion-text {
+  font-size: 0.8rem;
 }
 
 /* Loading State */
@@ -645,13 +947,12 @@ ion-note {
   border-radius: 50%;
   margin-bottom: 8px;
   transition: all 0.2s ease;
-  /* Fixed background for better visibility */
   background: var(--ion-color-primary);
 }
 
 .action-icon {
   font-size: 20px;
-  color: white !important; /* Force white icons for better contrast */
+  color: white !important;
 }
 
 .action-label {
@@ -665,21 +966,28 @@ ion-note {
 
 /* Dark Mode Optimizations */
 @media (prefers-color-scheme: dark) {
+  .alert-card {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--ion-color-success-rgb), 0.15),
+      rgba(var(--ion-color-primary-rgb), 0.15)
+    );
+    border: 1px solid rgba(var(--ion-color-success-rgb), 0.3);
+  }
+  
   .action-item {
     background: var(--ion-color-step-150);
     border-color: var(--ion-border-color);
   }
   
   .action-icon-wrapper {
-    background: var(--ion-color-primary); /* Keep primary color in dark mode too */
+    background: var(--ion-color-primary);
   }
   
   .action-item:active {
     background: var(--ion-color-step-200);
   }
 }
-
-
 
 /* Platform Specific Adjustments */
 .ios .action-item {
@@ -702,6 +1010,10 @@ ion-note {
 
 /* Responsive Design */
 @media (max-width: 360px) {
+  .todays-class-alert {
+    margin: 12px;
+  }
+  
   .quick-actions-grid {
     gap: 8px;
   }
@@ -737,6 +1049,11 @@ ion-note {
 }
 
 @media (min-width: 768px) {
+  .todays-class-alert {
+    margin: 16px auto;
+    max-width: 600px;
+  }
+  
   .quick-actions-container {
     padding: 16px 8px !important;
   }
@@ -772,8 +1089,23 @@ ion-note {
   outline-offset: 2px;
 }
 
+.join-button:focus-visible {
+  outline: 2px solid var(--ion-color-success);
+  outline-offset: 2px;
+}
+
 /* Safe area support for notched devices */
 @supports(padding: max(0px)) {
+  .todays-class-alert {
+    margin-left: max(16px, env(safe-area-inset-left));
+    margin-right: max(16px, env(safe-area-inset-right));
+  }
+  
+  .content-card {
+    margin-left: max(16px, env(safe-area-inset-left));
+    margin-right: max(16px, env(safe-area-inset-right));
+  }
+  
   .quick-actions-container {
     padding-left: max(8px, env(safe-area-inset-left)) !important;
     padding-right: max(8px, env(safe-area-inset-right)) !important;
@@ -783,151 +1115,29 @@ ion-note {
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .action-item,
-  .action-icon-wrapper {
+  .action-icon-wrapper,
+  .join-button {
     transition: none;
   }
   
-  .action-item:active {
+  .action-item:active,
+  .join-button:active {
     transform: none;
-  }
-}
-
-/* Bottom Tabs */
-ion-tab-bar {
-  --background: var(--ion-card-background);
-  --border: 1px solid var(--ion-border-color);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
-  padding-top: 8px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  height: auto;
-  min-height: 60px;
-}
-
-ion-tab-button {
-  --color: var(--ion-color-medium);
-  --color-selected: var(--ion-color-primary);
-  --background: transparent;
-  --background-focused: var(--ion-color-step-100);
-}
-
-ion-tab-button ion-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-ion-tab-button ion-label {
-  font-size: 12px;
-  margin-top: 0;
-  font-weight: 500;
-}
-
-/* Dark mode specific adjustments */
-.dark .content-card {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.dark .quick-action-button {
-  --background: var(--ion-color-step-150);
-  border-color: var(--ion-border-color);
-}
-
-.dark .quick-action-button .action-icon {
-  background: var(--ion-color-step-200);
-}
-
-.dark ion-tab-bar {
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-}
-
-/* Focus and active states */
-.quick-action-button:focus-visible,
-ion-tab-button:focus-visible {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: 2px;
-}
-
-.quick-action-button:active {
-  transform: translateY(1px);
-}
-
-/* Responsive Adjustments */
-@media (max-width: 400px) {
-  .quick-actions-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .quick-action-button {
-    --padding-top: 8px;
-    --padding-bottom: 8px;
-  }
-
-  .quick-action-button .action-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .quick-action-button ion-icon {
-    font-size: 20px;
-  }
-
-  ion-tab-button ion-icon {
-    font-size: 22px;
-  }
-
-  ion-tab-button ion-label {
-    font-size: 11px;
-  }
-}
-
-@media (min-width: 768px) {
-  .content-card {
-    margin: 16px auto;
-    max-width: 600px;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
   }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
+  .alert-card {
+    border: 2px solid var(--ion-color-success);
+  }
+  
   .content-card {
     border: 2px solid var(--ion-border-color);
   }
-
-  .quick-action-button {
+  
+  .action-item {
     border: 2px solid var(--ion-border-color);
-  }
-
-  ion-tab-bar {
-    --border: 2px solid var(--ion-border-color);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .quick-action-button {
-    transition: none;
-  }
-  
-  .quick-action-button:active {
-    transform: none;
-  }
-}
-
-/* Safe area insets for notched devices */
-@supports(padding: max(0px)) {
-  .content-card {
-    margin-left: max(16px, env(safe-area-inset-left));
-    margin-right: max(16px, env(safe-area-inset-right));
-  }
-  
-  ion-tab-bar {
-    padding-left: max(0px, env(safe-area-inset-left));
-    padding-right: max(0px, env(safe-area-inset-right));
   }
 }
 </style>
